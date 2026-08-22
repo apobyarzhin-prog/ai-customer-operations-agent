@@ -475,3 +475,26 @@ Before writing implementation code:
 3. Keep the architecture simple enough for a learning project.
 4. Do not add LangChain, LangGraph, Qdrant, or an LLM yet.
 5. Wait for approval before implementing the next major stage.
+
+---
+
+## 2026-08-22 — Stage 1.1 Started
+
+### Environment Decision
+
+- Python 3.11 retained for the project.
+- `uv` selected for dependency and virtual-environment management.
+- SQLite selected temporarily because Docker and PostgreSQL are not yet installed.
+- PostgreSQL will replace SQLite when the project reaches the database integration stage.
+
+### Initial Implementation
+
+- Added the FastAPI application entry point.
+- Added environment-based settings with `.env.example`.
+- Added a minimal SQLAlchemy engine and database-session dependency.
+- Added `/` and `/health` endpoints.
+- Added the first API test.
+
+### Presentation Plan
+
+The application will first run as a web-accessible FastAPI service with automatic API documentation at `/docs`. A separate frontend will later provide the customer chat and internal Operations Dashboard.
