@@ -10,13 +10,13 @@
 - [x] Light/dark white-label brand tokens
 - [x] Design direction selected: conversation-first workspace
 
-## CP-002 — Parallel build in progress
+## CP-002 — Parallel build
 
-- [ ] Canva logo and icon assets — blocked until Canva is reconnected
+- [x] Canva logo and visual brand book — created after Canva reconnection
 - [x] React frontend workspace — agent Tesla, build passed
 - [x] Backend hardening — agent Pascal, 7 tests passed
-- [ ] Frontend/backend integration
-- [ ] End-to-end demo checkpoint
+- [x] Frontend/backend integration
+- [x] End-to-end demo checkpoint
 
 ## CP-003 — Integration in progress
 
@@ -33,7 +33,7 @@
 - [x] Canva logo draft created — [Relay logo](https://www.canva.com/d/7b83DbSf3pUwpnt)
 - [x] Interface icon source selected: Lucide in React; Canva icon-kit draft is reference-only
 - [x] Visual brand book created — [Relay Operations Brand Book](https://www.canva.com/d/nZ-eDh5CWb6evEu)
-- [ ] End-to-end visual QA and deployment
+- [x] End-to-end visual QA pass completed
 
 ## CP-005 — Production readiness in progress
 
@@ -42,11 +42,20 @@
 - [ ] Multi-tenant workspace model
 - [ ] Deployment checkpoint
 
-## CP-006 — QA findings
+## CP-006 — QA findings resolved
 
 - [x] Alembic initial migration applied (`20260822_0001`)
 - [x] Visual QA screenshots captured
-- [ ] Fix stale selected-ticket content
-- [ ] Fix search selection state
-- [ ] Improve mobile navigation/context access
-- [ ] Complete demo-data localization and accessibility labels
+- [x] Fix stale selected-ticket content
+- [x] Fix search selection state
+- [x] Improve mobile navigation/context access
+- [x] Complete demo-data localization and accessibility labels
+
+## CP-007 — Final foundation verification
+
+- [x] Backend tests and Ruff pass
+- [x] Alembic reports the initial migration at `head`
+- [x] Frontend production build passes after QA fixes
+- [ ] Add workspace/tenant isolation
+- [ ] Add AI/RAG orchestration and evaluation
+- [ ] Deploy a public demo
