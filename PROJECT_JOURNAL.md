@@ -562,3 +562,7 @@ Added the first multi-tenant boundary. `Workspace` owns customers, orders, and t
 ## 2026-08-22 — AI Ticket Triage Foundation
 
 Added a bounded local triage slice without an external model or API key. `TicketTriageProvider` defines the provider boundary and `DemoTicketTriageProvider` applies deterministic keyword and current-status rules to return priority, recommended status, summary, suggested reply, confidence, and reasoning. `POST /tickets/{ticket_id}/triage` respects `X-Workspace-ID` and returns `404` for tickets outside the active workspace. The recommendation does not mutate the ticket; status changes remain explicit and separately testable.
+
+## 2026-08-22 — Relay visual system sync
+
+Completed a focused frontend-only visual pass against the Relay brand book. Added shared spacing and typography tokens, normalized surfaces, borders, controls, status pills, AI/triage cards, and responsive mobile panels. No API or interaction behavior changed. Production build and diff checks pass; commit `fad118c` is on `main`.

@@ -78,3 +78,12 @@
 - [x] Add deterministic and cross-workspace tests
 - [x] Update README and project journal
 - [ ] Connect a real model provider after evaluation and policy boundaries are ready
+
+## CP-010 — Relay visual system sync
+
+- [x] Align frontend spacing and typography with the brand book
+- [x] Normalize surfaces, borders, controls, status pills, and AI cards
+- [x] Preserve light/dark themes, four locales, accessibility, and responsive states
+- [x] Run `npm run build` and `git diff --check`
+- [x] Commit and push visual pass (`fad118c`)
+- [ ] Replace provisional Relay branding with tenant-configured branding
