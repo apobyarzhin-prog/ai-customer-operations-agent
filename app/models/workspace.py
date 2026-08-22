@@ -25,3 +25,4 @@ class Workspace(Base):
     customers = relationship("Customer", back_populates="workspace")
     orders = relationship("Order", back_populates="workspace")
     tickets = relationship("Ticket", back_populates="workspace")
+    users = relationship("User", back_populates="workspace", cascade="all, delete-orphan")

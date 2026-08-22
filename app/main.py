@@ -24,7 +24,7 @@ app.add_middleware(
     allow_origins=settings.cors_origin_list,
     allow_credentials=False,
     allow_methods=["GET", "POST", "PATCH", "OPTIONS"],
-    allow_headers=["Content-Type", "X-Workspace-ID"],
+    allow_headers=["Content-Type", "Authorization", "X-Workspace-ID"],
 )
 app.include_router(router)
 

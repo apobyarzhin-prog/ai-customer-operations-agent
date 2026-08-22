@@ -60,6 +60,24 @@ def migrate_db() -> None:
         command.stamp(_alembic_config(), "20260822_0001")
 
     command.upgrade(_alembic_config(), "head")
+    _ensure_demo_user()
+
+
+def _ensure_demo_user() -> None:
+    """Create the explicitly configured local demo identity when enabled."""
+    if not settings.demo_auth_enabled:
+        return
+    from app.core.auth import hash_password
+    from app.models import User
+
+    db = SessionLocal()
+    try:
+        if db.query(User).filter(User.email == settings.demo_user_email).first() is None:
+            db.add(User(workspace_id=1, email=settings.demo_user_email,
+                        password_hash=hash_password(settings.demo_user_password), role="owner"))
+            db.commit()
+    finally:
+        db.close()
 
 
 def init_db() -> None:

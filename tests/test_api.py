@@ -2,9 +2,10 @@ from uuid import uuid4
 
 from fastapi.testclient import TestClient
 
+from app.core.auth import create_access_token, hash_password
 from app.db.session import SessionLocal
 from app.main import app
-from app.models import Workspace
+from app.models import User, Workspace
 
 client = TestClient(app)
 
@@ -17,6 +18,24 @@ def create_workspace(suffix: str) -> int:
         db.commit()
         db.refresh(workspace)
         return workspace.id
+    finally:
+        db.close()
+
+
+def create_user(workspace_id: int, role: str, suffix: str) -> tuple[User, str]:
+    db = SessionLocal()
+    try:
+        user = User(
+            workspace_id=workspace_id,
+            email=f"{suffix}-{uuid4()}@example.com",
+            password_hash=hash_password("correct horse battery staple"),
+            role=role,
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        token, _ = create_access_token(user)
+        return user, token
     finally:
         db.close()
 
@@ -258,3 +277,42 @@ def test_ticket_triage_preserves_resolved_status() -> None:
     response = client.post(f"/tickets/{ticket['id']}/triage")
     assert response.status_code == 200
     assert response.json()["recommended_status"] == "resolved"
+
+
+def test_login_and_token_determine_workspace_scope() -> None:
+    workspace_id = create_workspace(str(uuid4()))
+    user, token = create_user(workspace_id, "agent", "token-user")
+    login_response = client.post(
+        "/auth/login",
+        json={"email": user.email, "password": "correct horse battery staple"},
+    )
+    assert login_response.status_code == 200
+    assert login_response.json()["user"]["workspace_id"] == workspace_id
+
+    headers = {"Authorization": f"Bearer {token}"}
+    assert client.get("/auth/me", headers=headers).json()["id"] == user.id
+    assert client.get("/customers", headers=headers).status_code == 200
+    assert client.get("/customers", headers={**headers, "X-Workspace-ID": "1"}).status_code == 403
+    assert client.get("/customers").status_code == 200  # explicit local demo fallback
+
+
+def test_roles_allow_read_only_viewer_but_block_writes() -> None:
+    workspace_id = create_workspace(str(uuid4()))
+    _, token = create_user(workspace_id, "viewer", "viewer")
+    headers = {"Authorization": f"Bearer {token}"}
+    assert client.get("/workspaces/settings", headers=headers).status_code == 200
+    assert client.post(
+        "/customers", headers=headers,
+        json={"email": f"blocked-{uuid4()}@example.com", "full_name": "Blocked"},
+    ).status_code == 403
+
+
+def test_missing_bearer_is_rejected_when_demo_auth_is_disabled(monkeypatch) -> None:
+    from app.core.config import get_settings
+
+    monkeypatch.setattr(get_settings(), "demo_auth_enabled", False)
+    try:
+        assert client.get("/customers").status_code == 401
+        assert client.get("/customers", headers={"X-Workspace-ID": "1"}).status_code == 401
+    finally:
+        monkeypatch.setattr(get_settings(), "demo_auth_enabled", True)

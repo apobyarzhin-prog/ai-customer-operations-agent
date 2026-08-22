@@ -1,10 +1,18 @@
-from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.auth import (
+    create_access_token,
+    get_current_user,
+    require_roles,
+    resolve_workspace_id,
+    verify_password,
+)
 from app.core.config import get_settings
 from app.db.session import get_db
-from app.models import Customer, Order, Ticket, Workspace
+from app.models import Customer, Order, Ticket, User, Workspace
+from app.schemas.auth import LoginRequest, TokenRead, UserRead
 from app.schemas.customer import CustomerCreate, CustomerRead
 from app.schemas.order import OrderCreate, OrderRead, OrderStatusUpdate
 from app.schemas.ticket import TicketCreate, TicketRead, TicketStatusUpdate
@@ -16,12 +24,7 @@ router = APIRouter()
 DEFAULT_WORKSPACE_ID = 1
 
 
-def get_workspace_id(
-    workspace_header: int | None = Header(default=None, alias="X-Workspace-ID"),
-) -> int:
-    """Resolve the active workspace while keeping legacy demo requests working."""
-
-    return workspace_header or DEFAULT_WORKSPACE_ID
+get_workspace_id = resolve_workspace_id
 
 
 def require_workspace(db: Session, workspace_id: int) -> Workspace:
@@ -38,11 +41,28 @@ def health_check() -> dict[str, str]:
     return {"status": "ok", "service": get_settings().app_name}
 
 
+@router.post("/auth/login", response_model=TokenRead, tags=["auth"])
+def login(payload: LoginRequest, db: Session = Depends(get_db)) -> TokenRead:
+    """Exchange credentials for a short-lived workspace-scoped bearer token."""
+    user = db.query(User).filter(User.email == str(payload.email).lower()).first()
+    if user is None or not user.is_active or not verify_password(payload.password, user.password_hash):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+    token, expires_in = create_access_token(user)
+    return TokenRead(access_token=token, expires_in=expires_in, user=UserRead.model_validate(user))
+
+
+@router.get("/auth/me", response_model=UserRead, tags=["auth"])
+def current_user(user: User = Depends(get_current_user)) -> User:
+    return user
+
+
 @router.get("/workspaces", response_model=list[WorkspaceRead], tags=["workspaces"])
-def list_workspaces(db: Session = Depends(get_db)) -> list[Workspace]:
+def list_workspaces(
+    user: User = Depends(get_current_user), db: Session = Depends(get_db)
+) -> list[Workspace]:
     """List workspaces available to the local demo client."""
 
-    return list(db.scalars(select(Workspace).order_by(Workspace.id)).all())
+    return list(db.scalars(select(Workspace).where(Workspace.id == user.workspace_id)).all())
 
 
 @router.get("/workspaces/settings", response_model=WorkspaceSettingsRead, tags=["workspaces"])
@@ -59,6 +79,7 @@ def get_workspace_settings(
 def update_workspace_settings(
     payload: WorkspaceSettingsUpdate,
     workspace_id: int = Depends(get_workspace_id),
+    _: User = Depends(require_roles("owner", "admin")),
     db: Session = Depends(get_db),
 ) -> Workspace:
     """Update only supplied white-label settings for the active workspace."""
@@ -75,6 +96,7 @@ def update_workspace_settings(
 def create_customer(
     payload: CustomerCreate,
     workspace_id: int = Depends(get_workspace_id),
+    _: User = Depends(require_roles("owner", "admin", "agent")),
     db: Session = Depends(get_db),
 ) -> Customer:
     """Create a customer record."""
@@ -128,6 +150,7 @@ def get_customer(
 def create_order(
     payload: OrderCreate,
     workspace_id: int = Depends(get_workspace_id),
+    _: User = Depends(require_roles("owner", "admin", "agent")),
     db: Session = Depends(get_db),
 ) -> Order:
     """Create an order belonging to an existing customer."""
@@ -177,6 +200,7 @@ def update_order_status(
     order_id: int,
     payload: OrderStatusUpdate,
     workspace_id: int = Depends(get_workspace_id),
+    _: User = Depends(require_roles("owner", "admin", "agent")),
     db: Session = Depends(get_db),
 ) -> Order:
     """Update an order status after validating the order and allowed value."""
@@ -195,6 +219,7 @@ def update_order_status(
 def create_ticket(
     payload: TicketCreate,
     workspace_id: int = Depends(get_workspace_id),
+    _: User = Depends(require_roles("owner", "admin", "agent")),
     db: Session = Depends(get_db),
 ) -> Ticket:
     """Create a support ticket for an existing customer."""
@@ -258,6 +283,7 @@ def update_ticket_status(
     ticket_id: int,
     payload: TicketStatusUpdate,
     workspace_id: int = Depends(get_workspace_id),
+    _: User = Depends(require_roles("owner", "admin", "agent")),
     db: Session = Depends(get_db),
 ) -> Ticket:
     """Update a ticket status after validating the ticket and allowed value."""
