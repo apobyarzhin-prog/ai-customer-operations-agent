@@ -570,3 +570,7 @@ Added a bounded local triage slice without an external model or API key. `Ticket
 ## 2026-08-22 — Relay visual system sync
 
 Completed a focused frontend-only visual pass against the Relay brand book. Added shared spacing and typography tokens, normalized surfaces, borders, controls, status pills, AI/triage cards, and responsive mobile panels. No API or interaction behavior changed. Production build and diff checks pass; commit `fad118c` is on `main`.
+
+## 2026-08-22 — Workspace branding settings UI
+
+Added a frontend-only settings drawer for workspace name, brand color, and secondary color. Values apply through CSS variables across the app shell and persist in localStorage as a demo fallback until the workspace settings API is connected. Light/dark themes, four locales, accessibility, and responsive behavior remain intact; commit `f74b51d` is on `main`.

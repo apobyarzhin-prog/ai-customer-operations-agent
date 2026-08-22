@@ -94,4 +94,9 @@
 - [x] Add Alembic migration `20260822_0003`
 - [x] Add `GET/PATCH /workspaces/settings` with `X-Workspace-ID`
 - [x] Add safe defaults and validation tests
-- [ ] Connect settings to frontend after backend contract review
+- [x] Connect demo settings UI with localStorage fallback
+- [x] Apply workspace name and brand colors through app-shell CSS variables
+- [x] Preserve themes, locales, accessibility, and responsive layout
+- [x] Run `npm run build` and `git diff --check`
+- [x] Commit and push frontend settings (`f74b51d`)
+- [ ] Replace localStorage fallback with live settings API integration
