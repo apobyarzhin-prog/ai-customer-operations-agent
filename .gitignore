@@ -17,3 +17,5 @@ build/
 .vscode/
 *.log
 *.db
+node_modules/
+frontend/dist/

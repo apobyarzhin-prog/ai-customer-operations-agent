@@ -530,3 +530,7 @@ List endpoints support the first frontend-friendly queries: customer search by n
 ### Frontend Timing
 
 The first frontend slice will be built after the core backend list/detail/filter workflow is stable. It will initially show a simple Operations Dashboard using the existing API. The customer chat and AI-driven views will be added after the backend workflows and agent behavior are ready.
+
+### Brand System Decision
+
+Selected design direction: option 3, a minimal conversation-first workspace. The project now has a provisional white-label brand kit named `Relay Operations`, with light/dark tokens, an original SVG mark, multilingual UI constraints, and a Lucide-based interface icon policy. The name is provisional until domain and trademark checks are completed.
