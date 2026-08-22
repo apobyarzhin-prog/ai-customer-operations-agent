@@ -38,3 +38,13 @@ def test_customer_order_and_ticket_workflow() -> None:
     )
     assert ticket_response.status_code == 201
     assert ticket_response.json()["status"] == "open"
+
+    assert client.get(f"/customers/{customer['id']}").status_code == 200
+    assert client.get(f"/orders/{order_response.json()['id']}").status_code == 200
+    assert client.get(f"/tickets/{ticket_response.json()['id']}").status_code == 200
+
+
+def test_missing_resources_return_not_found() -> None:
+    assert client.get("/customers/999999999").status_code == 404
+    assert client.get("/orders/999999999").status_code == 404
+    assert client.get("/tickets/999999999").status_code == 404
