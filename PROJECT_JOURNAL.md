@@ -512,3 +512,7 @@ The initial prototype uses synthetic portfolio data. The first relational entiti
 - `Ticket` — a support case created for a customer.
 
 Each customer can have multiple orders and support tickets. The local SQLite database creates these tables when the application starts. This startup creation is temporary; Alembic migrations will be introduced when the schema begins to evolve.
+
+### API Decision
+
+The first API exposes create and list operations for customers, orders, and tickets. Pydantic schemas validate incoming data, including allowed order and ticket statuses. Orders and tickets require an existing customer, so the API rejects invalid relationships instead of creating orphan records.
