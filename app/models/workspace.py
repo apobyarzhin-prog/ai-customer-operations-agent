@@ -14,6 +14,12 @@ class Workspace(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(120))
     slug: Mapped[str] = mapped_column(String(80), unique=True, index=True)
+    product_name: Mapped[str] = mapped_column(String(120), default="Relay Operations")
+    logo_url: Mapped[str | None] = mapped_column(String(500), default="/relay-mark.svg")
+    brand_color: Mapped[str] = mapped_column(String(7), default="#D97706")
+    brand_secondary_color: Mapped[str] = mapped_column(String(7), default="#0F766E")
+    locale: Mapped[str] = mapped_column(String(10), default="en")
+    timezone: Mapped[str] = mapped_column(String(64), default="UTC")
     created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
 
     customers = relationship("Customer", back_populates="workspace")

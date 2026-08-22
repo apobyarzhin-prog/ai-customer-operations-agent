@@ -9,7 +9,7 @@ from app.schemas.customer import CustomerCreate, CustomerRead
 from app.schemas.order import OrderCreate, OrderRead, OrderStatusUpdate
 from app.schemas.ticket import TicketCreate, TicketRead, TicketStatusUpdate
 from app.schemas.triage import TicketTriageRead
-from app.schemas.workspace import WorkspaceRead
+from app.schemas.workspace import WorkspaceRead, WorkspaceSettingsRead, WorkspaceSettingsUpdate
 from app.services.triage import get_ticket_triage_provider
 
 router = APIRouter()
@@ -43,6 +43,32 @@ def list_workspaces(db: Session = Depends(get_db)) -> list[Workspace]:
     """List workspaces available to the local demo client."""
 
     return list(db.scalars(select(Workspace).order_by(Workspace.id)).all())
+
+
+@router.get("/workspaces/settings", response_model=WorkspaceSettingsRead, tags=["workspaces"])
+def get_workspace_settings(
+    workspace_id: int = Depends(get_workspace_id),
+    db: Session = Depends(get_db),
+) -> Workspace:
+    """Return white-label settings for the active workspace."""
+
+    return require_workspace(db, workspace_id)
+
+
+@router.patch("/workspaces/settings", response_model=WorkspaceSettingsRead, tags=["workspaces"])
+def update_workspace_settings(
+    payload: WorkspaceSettingsUpdate,
+    workspace_id: int = Depends(get_workspace_id),
+    db: Session = Depends(get_db),
+) -> Workspace:
+    """Update only supplied white-label settings for the active workspace."""
+
+    workspace = require_workspace(db, workspace_id)
+    for field, value in payload.model_dump(exclude_unset=True).items():
+        setattr(workspace, field, value)
+    db.commit()
+    db.refresh(workspace)
+    return workspace
 
 
 @router.post("/customers", response_model=CustomerRead, status_code=status.HTTP_201_CREATED, tags=["customers"])

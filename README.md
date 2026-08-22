@@ -71,3 +71,9 @@ demo provider uses deterministic keyword and current-status rules, requires no A
 key, and is isolated behind `TicketTriageProvider` so a future provider can be added
 without changing the endpoint contract. The endpoint respects `X-Workspace-ID` and
 returns `404` when the ticket is outside the active workspace.
+
+## Workspace branding settings
+
+White-label settings are workspace-scoped and available through `GET/PATCH /workspaces/settings`.
+Use `X-Workspace-ID` to select a workspace. Demo workspace `1` defaults to Relay Operations,
+`#D97706`, `#0F766E`, English, UTC, and `/relay-mark.svg`.

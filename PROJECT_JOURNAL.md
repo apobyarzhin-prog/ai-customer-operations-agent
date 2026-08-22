@@ -1,5 +1,9 @@
 # AI Customer Operations Agent — Project Journal
 
+### 2026-08-22 — Workspace branding configuration foundation
+
+Added workspace-scoped white-label settings (product name, logo reference, brand colors, locale, and timezone) with safe Relay demo defaults. Added migration `20260822_0003`, validated `GET/PATCH /workspaces/settings`, and kept frontend unchanged pending API contract review.
+
 ## 1. Project Goal
 
 Build a production-style AI Customer Operations Agent as a portfolio project for Applied AI Engineer / Python AI Engineer roles and freelance work.

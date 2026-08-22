@@ -87,3 +87,11 @@
 - [x] Run `npm run build` and `git diff --check`
 - [x] Commit and push visual pass (`fad118c`)
 - [ ] Replace provisional Relay branding with tenant-configured branding
+
+## CP-011 — Workspace branding configuration
+
+- [x] Add workspace-scoped product name, logo reference, colors, locale, and timezone
+- [x] Add Alembic migration `20260822_0003`
+- [x] Add `GET/PATCH /workspaces/settings` with `X-Workspace-ID`
+- [x] Add safe defaults and validation tests
+- [ ] Connect settings to frontend after backend contract review

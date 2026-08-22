@@ -172,6 +172,42 @@ def test_workspace_listing_exposes_demo_workspace() -> None:
     assert any(item["id"] == 1 and item["slug"] == "relay-demo" for item in response.json())
 
 
+def test_workspace_settings_have_safe_demo_defaults_and_support_partial_update() -> None:
+    response = client.get("/workspaces/settings")
+    assert response.status_code == 200
+    assert response.json()["product_name"] == "Relay Operations"
+    assert response.json()["brand_color"] == "#D97706"
+    assert response.json()["locale"] == "en"
+
+    updated = client.patch(
+        "/workspaces/settings",
+        json={"product_name": "Acme Support", "brand_color": "#123456", "locale": "DE"},
+    )
+    assert updated.status_code == 200
+    assert updated.json()["product_name"] == "Acme Support"
+    assert updated.json()["brand_color"] == "#123456"
+    assert updated.json()["locale"] == "de"
+
+    invalid_color = client.patch("/workspaces/settings", json={"brand_color": "orange"})
+    assert invalid_color.status_code == 422
+    client.patch(
+        "/workspaces/settings",
+        json={"product_name": "Relay Operations", "brand_color": "#D97706", "locale": "en"},
+    )
+
+
+def test_workspace_settings_are_isolated() -> None:
+    workspace_id = create_workspace(str(uuid4()))
+    headers = {"X-Workspace-ID": str(workspace_id)}
+    response = client.get("/workspaces/settings", headers=headers)
+    assert response.status_code == 200
+    assert response.json()["workspace_id"] == workspace_id
+    assert client.patch(
+        "/workspaces/settings", headers=headers, json={"product_name": "Tenant Brand"}
+    ).json()["product_name"] == "Tenant Brand"
+    assert client.get("/workspaces/settings", headers={"X-Workspace-ID": "999999999"}).status_code == 404
+
+
 def test_ticket_triage_is_deterministic_and_workspace_scoped() -> None:
     workspace_id = create_workspace(str(uuid4()))
     headers = {"X-Workspace-ID": str(workspace_id)}
