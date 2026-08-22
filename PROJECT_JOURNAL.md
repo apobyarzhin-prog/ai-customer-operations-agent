@@ -582,3 +582,6 @@ Unified the production Relay mark across the sidebar, mobile header, favicon, an
 ## 2026-08-22 — Authentication and workspace RBAC
 
 Added FastAPI authentication with PBKDF2 password hashes, short-lived JWT bearer tokens, current-user workspace resolution, and owner/admin/agent/viewer role checks. Authenticated requests derive tenant scope from the token; `X-Workspace-ID` is only a checked compatibility header. The unauthenticated header flow remains explicitly limited to `DEMO_AUTH_ENABLED=true` local/demo mode. Migration `20260822_0004` and 17 tests pass; commit `8c27dbf` is on `main`.
+## 2026-08-22 — Inbox UX audit pass
+
+Audited the frontend workflow in code: Inbox → ticket → AI triage → Settings. Fixed the TypeScript fallback typing, made the language control explicit for EN/PL/DE/ES/RU, improved empty-state semantics, added Escape/scroll handling for Settings, and strengthened mobile overlay/focus styling. Backend and locale dictionaries were left unchanged; frontend build and diff checks pass in commit `10434e8`.
