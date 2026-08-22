@@ -20,6 +20,15 @@
 
 ## CP-003 — Integration in progress
 
-- [ ] Local CORS configuration
-- [ ] Real status actions from frontend
-- [ ] Combined backend/frontend verification
+- [x] Local CORS configuration
+- [x] Real status actions from frontend
+- [x] Combined backend/frontend verification
+
+## CP-004 — Integrated local demo
+
+- [x] Backend: 7 tests and Ruff pass
+- [x] Frontend: TypeScript/Vite production build passes
+- [x] Frontend fallback works without backend
+- [x] Frontend Resolve/Escalate calls backend PATCH endpoints
+- [ ] Canva logo and icon assets — waiting for account reconnection
+- [ ] End-to-end visual QA and deployment

@@ -542,3 +542,5 @@ Frontend and backend work were delegated to separate agents with disjoint write 
 Backend hardening and the first React frontend slice are complete. The frontend uses the Relay design tokens, Lucide icons, theme switching, locale switching, conversation-first layout, and a backend fallback for local demos. Backend tests and the frontend production build pass.
 
 Integration work is delegated next: local CORS, real ticket status actions, and combined verification.
+
+Integration checkpoint complete: local CORS is configured, frontend Resolve/Escalate actions call the backend status endpoints, and both backend tests and frontend production build pass. Canva assets remain blocked by expired authorization.

@@ -8,6 +8,13 @@ class Settings(BaseSettings):
 
     app_name: str = "AI Customer Operations Agent"
     database_url: str = "sqlite:///./customer_operations.db"
+    cors_origins: str = "http://127.0.0.1:5173,http://localhost:5173"
+
+    @property
+    def cors_origin_list(self) -> list[str]:
+        """Return configured browser origins as a trimmed list."""
+
+        return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
