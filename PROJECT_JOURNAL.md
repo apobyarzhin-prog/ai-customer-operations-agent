@@ -544,3 +544,5 @@ Backend hardening and the first React frontend slice are complete. The frontend 
 Integration work is delegated next: local CORS, real ticket status actions, and combined verification.
 
 Integration checkpoint complete: local CORS is configured, frontend Resolve/Escalate actions call the backend status endpoints, and both backend tests and frontend production build pass. Canva assets remain blocked by expired authorization.
+
+Canva was reconnected. A Relay logo draft was created in Canva. The Canva icon-kit generation was not suitable as production SVG assets, so the implementation will use Lucide directly in React with a documented icon mapping and license notice.

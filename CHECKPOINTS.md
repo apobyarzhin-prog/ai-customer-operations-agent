@@ -30,5 +30,6 @@
 - [x] Frontend: TypeScript/Vite production build passes
 - [x] Frontend fallback works without backend
 - [x] Frontend Resolve/Escalate calls backend PATCH endpoints
-- [ ] Canva logo and icon assets — waiting for account reconnection
+- [x] Canva logo draft created — [Relay logo](https://www.canva.com/d/7b83DbSf3pUwpnt)
+- [x] Interface icon source selected: Lucide in React; Canva icon-kit draft is reference-only
 - [ ] End-to-end visual QA and deployment
