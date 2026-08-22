@@ -558,3 +558,7 @@ Frontend QA follow-ups completed: ticket selection and search state now stay syn
 ## 2026-08-22 — Workspace Isolation Foundation
 
 Added the first multi-tenant boundary. `Workspace` owns customers, orders, and tickets through required `workspace_id` foreign keys. The `X-Workspace-ID` header selects a workspace; requests without it use the demo workspace ID `1` so the existing local UI and API examples keep working. Reads and status updates only resolve records inside the active workspace, returning `404` for records from another workspace. Alembic backfills existing prototype rows into `relay-demo`, and the seed script remains repeatable.
+
+## 2026-08-22 — AI Ticket Triage Foundation
+
+Added a bounded local triage slice without an external model or API key. `TicketTriageProvider` defines the provider boundary and `DemoTicketTriageProvider` applies deterministic keyword and current-status rules to return priority, recommended status, summary, suggested reply, confidence, and reasoning. `POST /tickets/{ticket_id}/triage` respects `X-Workspace-ID` and returns `404` for tickets outside the active workspace. The recommendation does not mutate the ticket; status changes remain explicit and separately testable.

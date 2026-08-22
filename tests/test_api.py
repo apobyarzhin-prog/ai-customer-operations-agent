@@ -170,3 +170,55 @@ def test_workspace_listing_exposes_demo_workspace() -> None:
 
     assert response.status_code == 200
     assert any(item["id"] == 1 and item["slug"] == "relay-demo" for item in response.json())
+
+
+def test_ticket_triage_is_deterministic_and_workspace_scoped() -> None:
+    workspace_id = create_workspace(str(uuid4()))
+    headers = {"X-Workspace-ID": str(workspace_id)}
+    customer = client.post(
+        "/customers", headers=headers, json={"email": f"triage-{uuid4()}@example.com", "full_name": "Triage Tester"}
+    ).json()
+    ticket = client.post(
+        "/tickets",
+        headers=headers,
+        json={
+            "customer_id": customer["id"],
+            "subject": "Payment failed and order is blocked",
+            "description": "The payment failed and I need help urgently.",
+        },
+    ).json()
+
+    response = client.post(f"/tickets/{ticket['id']}/triage", headers=headers)
+    assert response.status_code == 200
+    assert response.json() == {
+        "priority": "high",
+        "recommended_status": "in_progress",
+        "summary": "Payment failed and order is blocked: The payment failed and I need help urgently.",
+        "suggested_reply": "Thanks for contacting us. We have reviewed your request and routed it to our support team. We will follow up with the next update.",
+        "confidence": 0.9,
+        "reasoning": [
+            "The ticket describes a likely customer-impacting issue.",
+            "Matched: failed.",
+            "An actionable issue should be routed to active operations work.",
+        ],
+    }
+    assert client.post(f"/tickets/{ticket['id']}/triage", headers={"X-Workspace-ID": "1"}).status_code == 404
+
+
+def test_ticket_triage_preserves_resolved_status() -> None:
+    customer = client.post(
+        "/customers", json={"email": f"resolved-{uuid4()}@example.com", "full_name": "Resolved Tester"}
+    ).json()
+    ticket = client.post(
+        "/tickets",
+        json={
+            "customer_id": customer["id"],
+            "subject": "Refund request",
+            "description": "The issue has already been handled.",
+            "status": "resolved",
+        },
+    ).json()
+
+    response = client.post(f"/tickets/{ticket['id']}/triage")
+    assert response.status_code == 200
+    assert response.json()["recommended_status"] == "resolved"

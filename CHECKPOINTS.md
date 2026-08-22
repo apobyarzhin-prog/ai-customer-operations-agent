@@ -68,3 +68,13 @@
 - [x] Added `X-Workspace-ID` filtering with demo-default compatibility
 - [x] Added cross-workspace access tests and workspace listing endpoint
 - [x] Backend test suite and Ruff pass
+
+## CP-009 — AI ticket triage foundation
+
+- [x] Add provider interface with deterministic local implementation
+- [x] Add bounded triage response schema
+- [x] Add workspace-scoped `POST /tickets/{ticket_id}/triage`
+- [x] Keep recommendations non-mutating and explainable
+- [x] Add deterministic and cross-workspace tests
+- [x] Update README and project journal
+- [ ] Connect a real model provider after evaluation and policy boundaries are ready

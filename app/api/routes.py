@@ -8,7 +8,9 @@ from app.models import Customer, Order, Ticket, Workspace
 from app.schemas.customer import CustomerCreate, CustomerRead
 from app.schemas.order import OrderCreate, OrderRead, OrderStatusUpdate
 from app.schemas.ticket import TicketCreate, TicketRead, TicketStatusUpdate
+from app.schemas.triage import TicketTriageRead
 from app.schemas.workspace import WorkspaceRead
+from app.services.triage import get_ticket_triage_provider
 
 router = APIRouter()
 DEFAULT_WORKSPACE_ID = 1
@@ -209,6 +211,20 @@ def get_ticket(ticket_id: int, workspace_id: int = Depends(get_workspace_id), db
     if ticket is None:
         raise HTTPException(status_code=404, detail="Ticket not found")
     return ticket
+
+
+@router.post("/tickets/{ticket_id}/triage", response_model=TicketTriageRead, tags=["tickets"])
+def triage_ticket(
+    ticket_id: int,
+    workspace_id: int = Depends(get_workspace_id),
+    db: Session = Depends(get_db),
+) -> TicketTriageRead:
+    """Return a deterministic triage recommendation for a workspace ticket."""
+
+    ticket = db.scalar(select(Ticket).where(Ticket.id == ticket_id, Ticket.workspace_id == workspace_id))
+    if ticket is None:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+    return get_ticket_triage_provider().triage(ticket).to_schema()
 
 
 @router.patch("/tickets/{ticket_id}/status", response_model=TicketRead, tags=["tickets"])

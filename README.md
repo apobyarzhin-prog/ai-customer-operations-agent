@@ -31,7 +31,7 @@ The first milestone is a conventional FastAPI and PostgreSQL backend. AI capabil
 
 ## Status
 
-Stage 1 foundation: FastAPI, SQLite, Alembic, React demo UI, and workspace isolation are in place.
+Stage 1 foundation: FastAPI, SQLite, Alembic, React demo UI, workspace isolation, and a local deterministic ticket-triage slice are in place.
 
 ## Local demo data
 
@@ -62,3 +62,12 @@ Schema changes are applied automatically at startup. To run them manually:
 ```powershell
 uv run alembic -c app/alembic.ini upgrade head
 ```
+
+## Ticket triage foundation
+
+`POST /tickets/{ticket_id}/triage` returns a bounded recommendation with priority,
+recommended status, summary, suggested reply, confidence, and reasoning. The local
+demo provider uses deterministic keyword and current-status rules, requires no API
+key, and is isolated behind `TicketTriageProvider` so a future provider can be added
+without changing the endpoint contract. The endpoint respects `X-Workspace-ID` and
+returns `404` when the ticket is outside the active workspace.
