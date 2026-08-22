@@ -518,3 +518,7 @@ Each customer can have multiple orders and support tickets. The local SQLite dat
 The first API exposes create and list operations for customers, orders, and tickets. Pydantic schemas validate incoming data, including allowed order and ticket statuses. Orders and tickets require an existing customer, so the API rejects invalid relationships instead of creating orphan records.
 
 The API also exposes detail endpoints by ID. Missing resources return an explicit HTTP 404 response with a short error message, which gives the future frontend a predictable way to display errors.
+
+### Demo Data Decision
+
+A repeatable seed script creates synthetic customers, orders, and tickets for local demonstrations. It checks for an existing demo customer before inserting records, so running it again does not create duplicates. The generated SQLite database remains local and is ignored by Git.

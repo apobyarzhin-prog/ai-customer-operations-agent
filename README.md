@@ -32,3 +32,19 @@ The first milestone is a conventional FastAPI and PostgreSQL backend. AI capabil
 ## Status
 
 Planning — Stage 1.1: project setup.
+
+## Local demo data
+
+Start the API:
+
+```powershell
+uv run uvicorn app.main:app --reload
+```
+
+In another terminal, insert repeatable demo data:
+
+```powershell
+uv run python -m scripts.seed
+```
+
+Then open the interactive API at http://127.0.0.1:8000/docs.
