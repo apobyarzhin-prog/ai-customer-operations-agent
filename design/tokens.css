@@ -20,9 +20,11 @@
   --color-ink: #18212b;
   --color-ink-muted: #66727d;
   --color-border: #dce2e7;
-  --color-brand: #d97706;
-  --color-brand-hover: #b45309;
-  --color-brand-secondary: #0f766e;
+  --workspace-brand: #d97706;
+  --workspace-secondary: #0f766e;
+  --color-brand: var(--workspace-brand);
+  --color-brand-hover: color-mix(in srgb, var(--workspace-brand) 78%, #000000);
+  --color-brand-secondary: var(--workspace-secondary);
   --color-success: #238a59;
   --color-warning: #b7791f;
   --color-danger: #c44b4b;
@@ -41,9 +43,9 @@
   --color-ink: #f2f5f7;
   --color-ink-muted: #aab5be;
   --color-border: #33414d;
-  --color-brand: #f59e0b;
-  --color-brand-hover: #fbbf24;
-  --color-brand-secondary: #2dd4bf;
+  --color-brand: var(--workspace-brand);
+  --color-brand-hover: color-mix(in srgb, var(--workspace-brand) 78%, #ffffff);
+  --color-brand-secondary: var(--workspace-secondary);
   --shadow-subtle: 0 1px 2px rgb(0 0 0 / 20%);
   --shadow-panel: 0 12px 28px rgb(0 0 0 / 24%);
 }
