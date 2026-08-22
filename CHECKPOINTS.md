@@ -13,7 +13,7 @@
 ## CP-002 — Parallel build in progress
 
 - [ ] Canva logo and icon assets — blocked until Canva is reconnected
-- [ ] React frontend workspace — agent Tesla
-- [ ] Backend hardening — agent Pascal
+- [x] React frontend workspace — agent Tesla, build passed
+- [x] Backend hardening — agent Pascal, 7 tests passed
 - [ ] Frontend/backend integration
 - [ ] End-to-end demo checkpoint

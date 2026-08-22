@@ -538,3 +538,5 @@ Selected design direction: option 3, a minimal conversation-first workspace. The
 ### 2026-08-22 — Parallel Build Checkpoint
 
 Frontend and backend work were delegated to separate agents with disjoint write scopes. Canva logo/icon work is pending reconnection of the Canva account. Detailed progress is tracked in `CHECKPOINTS.md`.
+
+Backend hardening and the first React frontend slice are complete. The frontend uses the Relay design tokens, Lucide icons, theme switching, locale switching, conversation-first layout, and a backend fallback for local demos. Backend tests and the frontend production build pass.
