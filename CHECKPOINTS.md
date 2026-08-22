@@ -17,3 +17,9 @@
 - [x] Backend hardening — agent Pascal, 7 tests passed
 - [ ] Frontend/backend integration
 - [ ] End-to-end demo checkpoint
+
+## CP-003 — Integration in progress
+
+- [ ] Local CORS configuration
+- [ ] Real status actions from frontend
+- [ ] Combined backend/frontend verification
