@@ -546,3 +546,5 @@ Integration work is delegated next: local CORS, real ticket status actions, and 
 Integration checkpoint complete: local CORS is configured, frontend Resolve/Escalate actions call the backend status endpoints, and both backend tests and frontend production build pass. Canva assets remain blocked by expired authorization.
 
 Canva was reconnected. A Relay logo draft was created in Canva. The Canva icon-kit generation was not suitable as production SVG assets, so the implementation will use Lucide directly in React with a documented icon mapping and license notice.
+
+Canva visual brand book created: [Relay Operations Brand Book](https://www.canva.com/d/nZ-eDh5CWb6evEu). Its palette is synchronized with the repository: Primary Amber `#D97706`, Deep Teal `#0F766E`, Navy/Slate neutrals, and semantic status colors.

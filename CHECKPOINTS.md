@@ -32,4 +32,5 @@
 - [x] Frontend Resolve/Escalate calls backend PATCH endpoints
 - [x] Canva logo draft created — [Relay logo](https://www.canva.com/d/7b83DbSf3pUwpnt)
 - [x] Interface icon source selected: Lucide in React; Canva icon-kit draft is reference-only
+- [x] Visual brand book created — [Relay Operations Brand Book](https://www.canva.com/d/nZ-eDh5CWb6evEu)
 - [ ] End-to-end visual QA and deployment

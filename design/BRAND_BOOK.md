@@ -36,8 +36,9 @@ The interface uses warm amber as the brand accent and reserves semantic colors f
 | `ink` | `#18212B` | Primary text |
 | `ink-muted` | `#66727D` | Secondary text |
 | `border` | `#DCE2E7` | Dividers and inputs |
-| `brand` | `#B96F2D` | Primary actions and active states |
-| `brand-hover` | `#99571F` | Hover state |
+| `brand` | `#D97706` | Primary actions and active states |
+| `brand-hover` | `#B45309` | Hover state |
+| `brand-secondary` | `#0F766E` | Secondary actions and selected context |
 
 ### Dark theme
 
@@ -49,8 +50,9 @@ The interface uses warm amber as the brand accent and reserves semantic colors f
 | `ink` | `#F2F5F7` | Primary text |
 | `ink-muted` | `#AAB5BE` | Secondary text |
 | `border` | `#33414D` | Dividers and inputs |
-| `brand` | `#E0A15E` | Primary actions and active states |
-| `brand-hover` | `#F0B979` | Hover state |
+| `brand` | `#F59E0B` | Primary actions and active states |
+| `brand-hover` | `#FBBF24` | Hover state |
+| `brand-secondary` | `#2DD4BF` | Secondary actions and selected context |
 
 ### Semantic colors
 
@@ -94,7 +96,8 @@ The following values should become tenant settings later:
 {
   "product_name": "Relay Operations",
   "logo_url": "/branding/logo.svg",
-  "brand_color": "#B96F2D",
+  "brand_color": "#D97706",
+  "brand_secondary_color": "#0F766E",
   "default_locale": "en",
   "supported_locales": ["en", "pl", "de", "es"],
   "default_theme": "system"
