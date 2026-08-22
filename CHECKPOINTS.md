@@ -56,6 +56,15 @@
 - [x] Backend tests and Ruff pass
 - [x] Alembic reports the initial migration at `head`
 - [x] Frontend production build passes after QA fixes
-- [ ] Add workspace/tenant isolation
+- [x] Add workspace/tenant isolation foundation
 - [ ] Add AI/RAG orchestration and evaluation
 - [ ] Deploy a public demo
+
+## CP-008 — Workspace isolation foundation
+
+- [x] Added `Workspace` model and demo workspace `relay-demo` (ID `1`)
+- [x] Added `workspace_id` foreign keys to customers, orders, and tickets
+- [x] Added Alembic migration with legacy-data backfill
+- [x] Added `X-Workspace-ID` filtering with demo-default compatibility
+- [x] Added cross-workspace access tests and workspace listing endpoint
+- [x] Backend test suite and Ruff pass

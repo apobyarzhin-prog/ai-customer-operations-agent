@@ -17,6 +17,7 @@ class Order(Base):
     __tablename__ = "orders"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    workspace_id: Mapped[int] = mapped_column(ForeignKey("workspaces.id"), index=True)
     customer_id: Mapped[int] = mapped_column(ForeignKey("customers.id"), index=True)
     status: Mapped[str] = mapped_column(String(50), default="processing")
     total_amount: Mapped[Decimal] = mapped_column(Numeric(10, 2))
@@ -24,3 +25,4 @@ class Order(Base):
     created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
 
     customer: Mapped[Customer] = relationship(back_populates="orders")
+    workspace = relationship("Workspace", back_populates="orders")

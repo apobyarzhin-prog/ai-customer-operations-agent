@@ -57,8 +57,7 @@ def migrate_db() -> None:
                     f"Existing table '{table_name}' does not match the initial schema; "
                     "backup the database and migrate it explicitly."
                 )
-        command.stamp(_alembic_config(), "head")
-        return
+        command.stamp(_alembic_config(), "20260822_0001")
 
     command.upgrade(_alembic_config(), "head")
 

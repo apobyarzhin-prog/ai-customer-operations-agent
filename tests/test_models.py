@@ -8,7 +8,7 @@ def test_local_database_tables_are_created() -> None:
 
     table_names = set(engine.dialect.get_table_names(engine.connect()))
 
-    assert {"customers", "orders", "tickets"}.issubset(table_names)
+    assert {"customers", "orders", "tickets", "workspaces"}.issubset(table_names)
     assert Path("customer_operations.db").exists()
 
 
