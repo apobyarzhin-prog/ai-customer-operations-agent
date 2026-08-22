@@ -534,3 +534,7 @@ The first frontend slice will be built after the core backend list/detail/filter
 ### Brand System Decision
 
 Selected design direction: option 3, a minimal conversation-first workspace. The project now has a provisional white-label brand kit named `Relay Operations`, with light/dark tokens, an original SVG mark, multilingual UI constraints, and a Lucide-based interface icon policy. The name is provisional until domain and trademark checks are completed.
+
+### 2026-08-22 — Parallel Build Checkpoint
+
+Frontend and backend work were delegated to separate agents with disjoint write scopes. Canva logo/icon work is pending reconnection of the Canva account. Detailed progress is tracked in `CHECKPOINTS.md`.
