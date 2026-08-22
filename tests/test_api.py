@@ -2,9 +2,23 @@ from uuid import uuid4
 
 from fastapi.testclient import TestClient
 
+from app.db.session import SessionLocal
 from app.main import app
+from app.models import Workspace
 
 client = TestClient(app)
+
+
+def create_workspace(suffix: str) -> int:
+    db = SessionLocal()
+    try:
+        workspace = Workspace(name=f"Workspace {suffix}", slug=f"workspace-{suffix}")
+        db.add(workspace)
+        db.commit()
+        db.refresh(workspace)
+        return workspace.id
+    finally:
+        db.close()
 
 
 def test_customer_order_and_ticket_workflow() -> None:
@@ -114,3 +128,45 @@ def test_list_endpoints_support_pagination_and_validate_parameters() -> None:
     assert client.get("/customers?limit=0").status_code == 422
     assert client.get("/orders?offset=-1").status_code == 422
     assert client.get("/tickets?limit=101").status_code == 422
+
+
+def test_workspace_header_isolates_records_and_legacy_requests_use_demo_workspace() -> None:
+    first_workspace = create_workspace(str(uuid4()))
+    second_workspace = create_workspace(str(uuid4()))
+    first_headers = {"X-Workspace-ID": str(first_workspace)}
+    second_headers = {"X-Workspace-ID": str(second_workspace)}
+
+    first_customer = client.post(
+        "/customers", headers=first_headers, json={"email": f"tenant-a-{uuid4()}@example.com", "full_name": "Tenant A"}
+    ).json()
+    second_customer = client.post(
+        "/customers", headers=second_headers, json={"email": f"tenant-b-{uuid4()}@example.com", "full_name": "Tenant B"}
+    ).json()
+
+    assert first_customer["workspace_id"] == first_workspace
+    assert second_customer["workspace_id"] == second_workspace
+    assert [item["id"] for item in client.get("/customers", headers=first_headers).json()] == [first_customer["id"]]
+    assert client.get(f"/customers/{second_customer['id']}", headers=first_headers).status_code == 404
+
+    assert client.post(
+        "/orders",
+        headers=first_headers,
+        json={
+            "customer_id": second_customer["id"],
+            "total_amount": "10.00",
+            "shipping_address": "Cross-tenant address",
+        },
+    ).status_code == 404
+
+    legacy_customer = client.post(
+        "/customers", json={"email": f"legacy-{uuid4()}@example.com", "full_name": "Legacy Demo"}
+    ).json()
+    assert legacy_customer["workspace_id"] == 1
+    assert client.get(f"/customers/{legacy_customer['id']}").status_code == 200
+
+
+def test_workspace_listing_exposes_demo_workspace() -> None:
+    response = client.get("/workspaces")
+
+    assert response.status_code == 200
+    assert any(item["id"] == 1 and item["slug"] == "relay-demo" for item in response.json())

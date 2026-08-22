@@ -31,7 +31,7 @@ The first milestone is a conventional FastAPI and PostgreSQL backend. AI capabil
 
 ## Status
 
-Planning — Stage 1.1: project setup.
+Stage 1 foundation: FastAPI, SQLite, Alembic, React demo UI, and workspace isolation are in place.
 
 ## Local demo data
 
@@ -48,3 +48,17 @@ uv run python -m scripts.seed
 ```
 
 Then open the interactive API at http://127.0.0.1:8000/docs.
+
+## Workspace isolation
+
+The local demo uses workspace `1` (`relay-demo`) by default, so existing requests remain compatible. To scope a request to another workspace, send the `X-Workspace-ID` header:
+
+```powershell
+curl http://127.0.0.1:8000/customers -H "X-Workspace-ID: 1"
+```
+
+Schema changes are applied automatically at startup. To run them manually:
+
+```powershell
+uv run alembic -c app/alembic.ini upgrade head
+```
