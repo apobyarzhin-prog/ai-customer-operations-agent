@@ -5,16 +5,16 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import router
 from app.core.config import get_settings
-from app.db.session import init_db
+from app.db.session import migrate_db
 
 settings = get_settings()
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    """Initialize local database tables during application startup."""
+    """Apply database migrations during application startup."""
 
-    init_db()
+    migrate_db()
     yield
 
 

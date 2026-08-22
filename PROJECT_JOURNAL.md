@@ -548,3 +548,7 @@ Integration checkpoint complete: local CORS is configured, frontend Resolve/Esca
 Canva was reconnected. A Relay logo draft was created in Canva. The Canva icon-kit generation was not suitable as production SVG assets, so the implementation will use Lucide directly in React with a documented icon mapping and license notice.
 
 Canva visual brand book created: [Relay Operations Brand Book](https://www.canva.com/d/nZ-eDh5CWb6evEu). Its palette is synchronized with the repository: Primary Amber `#D97706`, Deep Teal `#0F766E`, Navy/Slate neutrals, and semantic status colors.
+
+Next checkpoint: production readiness. Alembic migrations and a visual frontend QA are delegated before introducing multi-tenant configuration.
+
+Alembic checkpoint passed: initial migration is applied and backend tests pass. Visual QA found four frontend follow-ups: selected-ticket content must stay synchronized, search must reset selection, mobile navigation needs an accessible queue/context path, and demo content/localization plus icon labels need cleanup.

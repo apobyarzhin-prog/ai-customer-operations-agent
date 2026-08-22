@@ -34,3 +34,19 @@
 - [x] Interface icon source selected: Lucide in React; Canva icon-kit draft is reference-only
 - [x] Visual brand book created — [Relay Operations Brand Book](https://www.canva.com/d/nZ-eDh5CWb6evEu)
 - [ ] End-to-end visual QA and deployment
+
+## CP-005 — Production readiness in progress
+
+- [ ] Alembic migrations for SQLite/PostgreSQL path — backend agent
+- [ ] Frontend visual QA — Product Design audit agent
+- [ ] Multi-tenant workspace model
+- [ ] Deployment checkpoint
+
+## CP-006 — QA findings
+
+- [x] Alembic initial migration applied (`20260822_0001`)
+- [x] Visual QA screenshots captured
+- [ ] Fix stale selected-ticket content
+- [ ] Fix search selection state
+- [ ] Improve mobile navigation/context access
+- [ ] Complete demo-data localization and accessibility labels
