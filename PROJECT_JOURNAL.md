@@ -578,3 +578,7 @@ Added a frontend-only settings drawer for workspace name, brand color, and secon
 ## 2026-08-22 — Production logo integration
 
 Unified the production Relay mark across the sidebar, mobile header, favicon, and workspace settings preview. The workspace `logo_url` remains replaceable for white-label deployments, with a safe fallback to `/relay-mark.svg`; Lucide remains reserved for interface actions. Frontend build passed and commit `894027b` was pushed to `main`.
+
+## 2026-08-22 — Authentication and workspace RBAC
+
+Added FastAPI authentication with PBKDF2 password hashes, short-lived JWT bearer tokens, current-user workspace resolution, and owner/admin/agent/viewer role checks. Authenticated requests derive tenant scope from the token; `X-Workspace-ID` is only a checked compatibility header. The unauthenticated header flow remains explicitly limited to `DEMO_AUTH_ENABLED=true` local/demo mode. Migration `20260822_0004` and 17 tests pass; commit `8c27dbf` is on `main`.

@@ -109,3 +109,16 @@
 - [x] Keep Lucide icons for interface actions; no icon is used as the brand mark
 - [x] Add consistent accessible logo alt labels
 - [x] Run frontend build and push commit `894027b`
+
+## CP-013 — Authentication and workspace RBAC
+
+- [x] Add User model and Alembic migration `20260822_0004`
+- [x] Add PBKDF2 password hashing and JWT bearer login
+- [x] Add owner/admin/agent/viewer role checks
+- [x] Resolve workspace from current user token
+- [x] Reject authenticated cross-workspace header mismatches
+- [x] Keep legacy header fallback only behind `DEMO_AUTH_ENABLED`
+- [x] Add isolation, login, role, and demo-mode tests (17 passed)
+- [x] Run Ruff, Alembic head check, diff check, and push `8c27dbf`
+- [ ] Connect frontend login/session UI
+- [ ] Add production user invitation and password reset flows
