@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -35,10 +35,17 @@ def create_customer(payload: CustomerCreate, db: Session = Depends(get_db)) -> C
 
 
 @router.get("/customers", response_model=list[CustomerRead], tags=["customers"])
-def list_customers(db: Session = Depends(get_db)) -> list[Customer]:
-    """Return all customers."""
+def list_customers(
+    search: str | None = Query(default=None, min_length=1),
+    db: Session = Depends(get_db),
+) -> list[Customer]:
+    """Return customers, optionally filtered by name or email."""
 
-    return list(db.scalars(select(Customer).order_by(Customer.id)).all())
+    query = select(Customer).order_by(Customer.id)
+    if search:
+        pattern = f"%{search}%"
+        query = query.where(Customer.full_name.ilike(pattern) | Customer.email.ilike(pattern))
+    return list(db.scalars(query).all())
 
 
 @router.get("/customers/{customer_id}", response_model=CustomerRead, tags=["customers"])
@@ -66,10 +73,19 @@ def create_order(payload: OrderCreate, db: Session = Depends(get_db)) -> Order:
 
 
 @router.get("/orders", response_model=list[OrderRead], tags=["orders"])
-def list_orders(db: Session = Depends(get_db)) -> list[Order]:
-    """Return all orders."""
+def list_orders(
+    customer_id: int | None = Query(default=None, gt=0),
+    order_status: str | None = Query(default=None, alias="status"),
+    db: Session = Depends(get_db),
+) -> list[Order]:
+    """Return orders, optionally filtered by customer and status."""
 
-    return list(db.scalars(select(Order).order_by(Order.id)).all())
+    query = select(Order).order_by(Order.id)
+    if customer_id is not None:
+        query = query.where(Order.customer_id == customer_id)
+    if order_status:
+        query = query.where(Order.status == order_status)
+    return list(db.scalars(query).all())
 
 
 @router.get("/orders/{order_id}", response_model=OrderRead, tags=["orders"])
@@ -97,10 +113,19 @@ def create_ticket(payload: TicketCreate, db: Session = Depends(get_db)) -> Ticke
 
 
 @router.get("/tickets", response_model=list[TicketRead], tags=["tickets"])
-def list_tickets(db: Session = Depends(get_db)) -> list[Ticket]:
-    """Return all support tickets."""
+def list_tickets(
+    customer_id: int | None = Query(default=None, gt=0),
+    ticket_status: str | None = Query(default=None, alias="status"),
+    db: Session = Depends(get_db),
+) -> list[Ticket]:
+    """Return tickets, optionally filtered by customer and status."""
 
-    return list(db.scalars(select(Ticket).order_by(Ticket.id)).all())
+    query = select(Ticket).order_by(Ticket.id)
+    if customer_id is not None:
+        query = query.where(Ticket.customer_id == customer_id)
+    if ticket_status:
+        query = query.where(Ticket.status == ticket_status)
+    return list(db.scalars(query).all())
 
 
 @router.get("/tickets/{ticket_id}", response_model=TicketRead, tags=["tickets"])

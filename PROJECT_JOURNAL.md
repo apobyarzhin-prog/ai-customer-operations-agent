@@ -522,3 +522,11 @@ The API also exposes detail endpoints by ID. Missing resources return an explici
 ### Demo Data Decision
 
 A repeatable seed script creates synthetic customers, orders, and tickets for local demonstrations. It checks for an existing demo customer before inserting records, so running it again does not create duplicates. The generated SQLite database remains local and is ignored by Git.
+
+### API Filtering
+
+List endpoints support the first frontend-friendly queries: customer search by name/email, order filtering by customer/status, and ticket filtering by customer/status.
+
+### Frontend Timing
+
+The first frontend slice will be built after the core backend list/detail/filter workflow is stable. It will initially show a simple Operations Dashboard using the existing API. The customer chat and AI-driven views will be added after the backend workflows and agent behavior are ready.

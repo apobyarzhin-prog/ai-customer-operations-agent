@@ -42,6 +42,9 @@ def test_customer_order_and_ticket_workflow() -> None:
     assert client.get(f"/customers/{customer['id']}").status_code == 200
     assert client.get(f"/orders/{order_response.json()['id']}").status_code == 200
     assert client.get(f"/tickets/{ticket_response.json()['id']}").status_code == 200
+    assert len(client.get(f"/orders?customer_id={customer['id']}&status=delivered").json()) == 1
+    assert len(client.get(f"/tickets?customer_id={customer['id']}&status=open").json()) == 1
+    assert len(client.get("/customers?search=Alex").json()) >= 1
 
 
 def test_missing_resources_return_not_found() -> None:
