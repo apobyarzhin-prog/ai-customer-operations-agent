@@ -498,3 +498,17 @@ Before writing implementation code:
 ### Presentation Plan
 
 The application will first run as a web-accessible FastAPI service with automatic API documentation at `/docs`. A separate frontend will later provide the customer chat and internal Operations Dashboard.
+
+---
+
+## 2026-08-22 — Stage 1.2 Started
+
+### Domain Model Decision
+
+The initial prototype uses synthetic portfolio data. The first relational entities are:
+
+- `Customer` — a person using the service.
+- `Order` — a purchase belonging to a customer.
+- `Ticket` — a support case created for a customer.
+
+Each customer can have multiple orders and support tickets. The local SQLite database creates these tables when the application starts. This startup creation is temporary; Alembic migrations will be introduced when the schema begins to evolve.

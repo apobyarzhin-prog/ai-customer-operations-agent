@@ -16,6 +16,14 @@ engine = create_engine(settings.database_url, connect_args=connect_args)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
 
+def init_db() -> None:
+    """Create database tables for the local prototype."""
+
+    from app import models  # noqa: F401  # Register models before creating tables.
+
+    Base.metadata.create_all(bind=engine)
+
+
 def get_db() -> Generator[Session, None, None]:
     """Provide a database session to an API request and close it afterwards."""
 
