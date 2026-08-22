@@ -100,3 +100,12 @@
 - [x] Run `npm run build` and `git diff --check`
 - [x] Commit and push frontend settings (`f74b51d`)
 - [ ] Replace localStorage fallback with live settings API integration
+
+## CP-012 — Production logo and icon integration
+
+- [x] Use one production logo URL (`/relay-mark.svg`) across sidebar, mobile header, favicon, and settings preview
+- [x] Keep workspace `logo_url` white-label override with safe fallback to the production asset
+- [x] Normalize logo dimensions to the brand-book 32px navigation mark
+- [x] Keep Lucide icons for interface actions; no icon is used as the brand mark
+- [x] Add consistent accessible logo alt labels
+- [x] Run frontend build and push commit `894027b`

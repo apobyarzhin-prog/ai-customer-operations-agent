@@ -574,3 +574,7 @@ Completed a focused frontend-only visual pass against the Relay brand book. Adde
 ## 2026-08-22 — Workspace branding settings UI
 
 Added a frontend-only settings drawer for workspace name, brand color, and secondary color. Values apply through CSS variables across the app shell and persist in localStorage as a demo fallback until the workspace settings API is connected. Light/dark themes, four locales, accessibility, and responsive behavior remain intact; commit `f74b51d` is on `main`.
+
+## 2026-08-22 — Production logo integration
+
+Unified the production Relay mark across the sidebar, mobile header, favicon, and workspace settings preview. The workspace `logo_url` remains replaceable for white-label deployments, with a safe fallback to `/relay-mark.svg`; Lucide remains reserved for interface actions. Frontend build passed and commit `894027b` was pushed to `main`.
