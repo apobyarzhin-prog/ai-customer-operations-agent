@@ -51,3 +51,66 @@ def test_missing_resources_return_not_found() -> None:
     assert client.get("/customers/999999999").status_code == 404
     assert client.get("/orders/999999999").status_code == 404
     assert client.get("/tickets/999999999").status_code == 404
+
+
+def test_status_updates_and_status_validation() -> None:
+    customer_response = client.post(
+        "/customers",
+        json={"email": f"status-{uuid4()}@example.com", "full_name": "Status Tester"},
+    )
+    customer_id = customer_response.json()["id"]
+    order_response = client.post(
+        "/orders",
+        json={
+            "customer_id": customer_id,
+            "total_amount": "25.00",
+            "shipping_address": "1 Test Street",
+        },
+    )
+    ticket_response = client.post(
+        "/tickets",
+        json={
+            "customer_id": customer_id,
+            "subject": "Status update",
+            "description": "Please update this case.",
+        },
+    )
+
+    order_id = order_response.json()["id"]
+    ticket_id = ticket_response.json()["id"]
+    updated_order = client.patch(f"/orders/{order_id}/status", json={"status": "shipped"})
+    updated_ticket = client.patch(
+        f"/tickets/{ticket_id}/status", json={"status": "in_progress"}
+    )
+
+    assert updated_order.status_code == 200
+    assert updated_order.json()["status"] == "shipped"
+    assert updated_ticket.status_code == 200
+    assert updated_ticket.json()["status"] == "in_progress"
+    assert client.patch(f"/orders/{order_id}/status", json={"status": "unknown"}).status_code == 422
+    assert client.patch(f"/tickets/{ticket_id}/status", json={"status": "unknown"}).status_code == 422
+
+
+def test_status_updates_return_not_found() -> None:
+    assert client.patch("/orders/999999999/status", json={"status": "shipped"}).status_code == 404
+    assert client.patch("/tickets/999999999/status", json={"status": "resolved"}).status_code == 404
+
+
+def test_list_endpoints_support_pagination_and_validate_parameters() -> None:
+    for index in range(3):
+        response = client.post(
+            "/customers",
+            json={
+                "email": f"page-{uuid4()}@example.com",
+                "full_name": f"Page Tester {index}",
+            },
+        )
+        assert response.status_code == 201
+
+    response = client.get("/customers?search=Page%20Tester&limit=2&offset=1")
+    assert response.status_code == 200
+    assert len(response.json()) == 2
+
+    assert client.get("/customers?limit=0").status_code == 422
+    assert client.get("/orders?offset=-1").status_code == 422
+    assert client.get("/tickets?limit=101").status_code == 422

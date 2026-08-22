@@ -13,6 +13,10 @@ class TicketCreate(BaseModel):
     status: TicketStatus = "open"
 
 
+class TicketStatusUpdate(BaseModel):
+    status: TicketStatus
+
+
 class TicketRead(TicketCreate):
     model_config = ConfigDict(from_attributes=True)
 

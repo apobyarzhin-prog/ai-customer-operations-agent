@@ -6,8 +6,8 @@ from app.core.config import get_settings
 from app.db.session import get_db
 from app.models import Customer, Order, Ticket
 from app.schemas.customer import CustomerCreate, CustomerRead
-from app.schemas.order import OrderCreate, OrderRead
-from app.schemas.ticket import TicketCreate, TicketRead
+from app.schemas.order import OrderCreate, OrderRead, OrderStatusUpdate
+from app.schemas.ticket import TicketCreate, TicketRead, TicketStatusUpdate
 
 router = APIRouter()
 
@@ -37,6 +37,8 @@ def create_customer(payload: CustomerCreate, db: Session = Depends(get_db)) -> C
 @router.get("/customers", response_model=list[CustomerRead], tags=["customers"])
 def list_customers(
     search: str | None = Query(default=None, min_length=1),
+    limit: int = Query(default=100, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
 ) -> list[Customer]:
     """Return customers, optionally filtered by name or email."""
@@ -45,7 +47,7 @@ def list_customers(
     if search:
         pattern = f"%{search}%"
         query = query.where(Customer.full_name.ilike(pattern) | Customer.email.ilike(pattern))
-    return list(db.scalars(query).all())
+    return list(db.scalars(query.limit(limit).offset(offset)).all())
 
 
 @router.get("/customers/{customer_id}", response_model=CustomerRead, tags=["customers"])
@@ -76,6 +78,8 @@ def create_order(payload: OrderCreate, db: Session = Depends(get_db)) -> Order:
 def list_orders(
     customer_id: int | None = Query(default=None, gt=0),
     order_status: str | None = Query(default=None, alias="status"),
+    limit: int = Query(default=100, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
 ) -> list[Order]:
     """Return orders, optionally filtered by customer and status."""
@@ -85,7 +89,7 @@ def list_orders(
         query = query.where(Order.customer_id == customer_id)
     if order_status:
         query = query.where(Order.status == order_status)
-    return list(db.scalars(query).all())
+    return list(db.scalars(query.limit(limit).offset(offset)).all())
 
 
 @router.get("/orders/{order_id}", response_model=OrderRead, tags=["orders"])
@@ -95,6 +99,24 @@ def get_order(order_id: int, db: Session = Depends(get_db)) -> Order:
     order = db.get(Order, order_id)
     if order is None:
         raise HTTPException(status_code=404, detail="Order not found")
+    return order
+
+
+@router.patch("/orders/{order_id}/status", response_model=OrderRead, tags=["orders"])
+def update_order_status(
+    order_id: int,
+    payload: OrderStatusUpdate,
+    db: Session = Depends(get_db),
+) -> Order:
+    """Update an order status after validating the order and allowed value."""
+
+    order = db.get(Order, order_id)
+    if order is None:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    order.status = payload.status
+    db.commit()
+    db.refresh(order)
     return order
 
 
@@ -116,6 +138,8 @@ def create_ticket(payload: TicketCreate, db: Session = Depends(get_db)) -> Ticke
 def list_tickets(
     customer_id: int | None = Query(default=None, gt=0),
     ticket_status: str | None = Query(default=None, alias="status"),
+    limit: int = Query(default=100, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
 ) -> list[Ticket]:
     """Return tickets, optionally filtered by customer and status."""
@@ -125,7 +149,7 @@ def list_tickets(
         query = query.where(Ticket.customer_id == customer_id)
     if ticket_status:
         query = query.where(Ticket.status == ticket_status)
-    return list(db.scalars(query).all())
+    return list(db.scalars(query.limit(limit).offset(offset)).all())
 
 
 @router.get("/tickets/{ticket_id}", response_model=TicketRead, tags=["tickets"])
@@ -135,4 +159,22 @@ def get_ticket(ticket_id: int, db: Session = Depends(get_db)) -> Ticket:
     ticket = db.get(Ticket, ticket_id)
     if ticket is None:
         raise HTTPException(status_code=404, detail="Ticket not found")
+    return ticket
+
+
+@router.patch("/tickets/{ticket_id}/status", response_model=TicketRead, tags=["tickets"])
+def update_ticket_status(
+    ticket_id: int,
+    payload: TicketStatusUpdate,
+    db: Session = Depends(get_db),
+) -> Ticket:
+    """Update a ticket status after validating the ticket and allowed value."""
+
+    ticket = db.get(Ticket, ticket_id)
+    if ticket is None:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+
+    ticket.status = payload.status
+    db.commit()
+    db.refresh(ticket)
     return ticket

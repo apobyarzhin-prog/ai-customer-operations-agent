@@ -14,6 +14,10 @@ class OrderCreate(BaseModel):
     shipping_address: str
 
 
+class OrderStatusUpdate(BaseModel):
+    status: OrderStatus
+
+
 class OrderRead(OrderCreate):
     model_config = ConfigDict(from_attributes=True)
 
