@@ -22,4 +22,4 @@ class Ticket(Base):
     status: Mapped[str] = mapped_column(String(50), default="open")
     created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
 
-    customer: Mapped["Customer"] = relationship(back_populates="tickets")
+    customer: Mapped[Customer] = relationship(back_populates="tickets")

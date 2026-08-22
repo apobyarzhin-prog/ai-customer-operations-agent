@@ -23,4 +23,4 @@ class Order(Base):
     shipping_address: Mapped[str] = mapped_column(String(500))
     created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
 
-    customer: Mapped["Customer"] = relationship(back_populates="orders")
+    customer: Mapped[Customer] = relationship(back_populates="orders")
