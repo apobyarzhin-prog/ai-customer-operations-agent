@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { CSSProperties, ReactNode } from 'react'
-import { Archive, ArrowUpRight, Bot, Check, ChevronDown, CircleHelp, Clock3, Inbox, Languages, LayoutDashboard, Menu, Moon, MoreHorizontal, Paperclip, PanelRight, Search, Send, Settings, Sun, Tag, UserRound, X } from 'lucide-react'
+import type { CSSProperties, FormEvent, ReactNode } from 'react'
+import { Archive, ArrowUpRight, Bot, Check, ChevronDown, CircleHelp, Clock3, Inbox, KeyRound, Languages, LayoutDashboard, LogOut, Menu, Moon, MoreHorizontal, Paperclip, PanelRight, Search, Send, Settings, ShieldCheck, Sun, Tag, UserRound, X } from 'lucide-react'
 
 type Locale = 'en' | 'pl' | 'de' | 'es' | 'ru'
 type Ticket = { id: number; customer: string; initials: string; subject: string; preview: string; time: string; status: 'open' | 'pending' | 'escalated' | 'resolved'; channel: string; order: string; email: string; total: string; customerMessage?: string; agentMessage?: string; policy?: string; recommendedAction?: string; orderStatus?: string; delivery?: string; tags?: string[] }
@@ -9,8 +9,11 @@ type ApiCustomer = { id: number; name: string; email: string }
 type TriageResult = { priority: 'low' | 'normal' | 'high' | 'urgent'; recommended_status: 'open' | 'in_progress' | 'resolved'; summary: string; suggested_reply: string; confidence: number; reasoning: string[] }
 type WorkspaceSettings = { name: string; logoUrl: string; brandColor: string; secondaryColor: string }
 type ApiWorkspaceSettings = { product_name: string; logo_url: string; brand_color: string; brand_secondary_color: string }
+type Role = 'owner' | 'admin' | 'agent' | 'viewer'
+type AuthUser = { id: number; email: string; workspace_id: number; role: Role }
+type AuthSession = { access_token: string; token_type: string; expires_in: number; user: AuthUser }
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000'
-const WORKSPACE_ID = '1'
+const DEMO_AUTH_ENABLED = import.meta.env.VITE_DEMO_AUTH_ENABLED === 'true'
 const PRODUCTION_LOGO_URL = '/relay-mark.svg'
 const defaultWorkspaceSettings: WorkspaceSettings = { name: 'Relay Operations', logoUrl: PRODUCTION_LOGO_URL, brandColor: '#D97706', secondaryColor: '#0F766E' }
 
@@ -22,11 +25,11 @@ const demoTickets: Ticket[] = [
 ]
 
 const copy = {
-  en: { inbox: 'Inbox', customers: 'Customers', knowledge: 'Knowledge', reports: 'Reports', search: 'Search conversations', assigned: 'Assigned to me', open: 'Open', waiting: 'Waiting', escalated: 'Escalated', conversation: 'Conversation', context: 'Customer context', order: 'Order', activity: 'Activity', recommended: 'Recommended next step', reply: 'Reply to', send: 'Send reply', note: 'Add internal note', resolved: 'Mark as resolved', escalate: 'Escalate', ai: 'Relay Assist', all: 'All conversations', settings: 'Settings', operator: 'Operator', today: 'Today', viewCustomer: 'View customer', view: 'View', tags: 'Tags', writeReply: 'Write a reply...', replySaved: 'Reply saved to the conversation.', policyMatch: 'Policy match', shipped: 'Order shipped', payment: 'Payment captured', placed: 'Order placed', queue: 'Conversation queue', contextPanel: 'Customer context panel', close: 'Close', more: 'More actions', attach: 'Attach file', status: 'Change status', menu: 'Open conversation queue', panel: 'Open customer context', triage: 'Run AI triage', triageTitle: 'AI ticket triage', triageLoading: 'Analyzing ticket…', triageUnavailable: 'AI triage is unavailable. Check that the backend is running.', triagePriority: 'Priority', triageStatus: 'Recommended status', triageSummary: 'Summary', triageReply: 'Suggested reply', triageConfidence: 'Confidence', triageReasoning: 'Why this was suggested', useReply: 'Use suggested reply', workspaceSettings: 'Workspace settings', workspaceName: 'Workspace name', logoUrl: 'Logo URL', brandColor: 'Brand color', secondaryColor: 'Secondary color', saveSettings: 'Save changes', resetSettings: 'Reset defaults', settingsHint: 'Workspace branding loads from the API when available. This browser keeps a fallback copy.', settingsLoading: 'Loading workspace branding…', settingsLoadError: 'Using local demo branding because the workspace API is unavailable.', settingsSaveError: 'Could not save to the workspace API. Your changes are kept locally.', language: 'Language', theme: 'Toggle theme', noConversations: 'No conversations found', tryDifferentSearch: 'Try a different search.', noConversationSelected: 'No conversation selected', noConversationsAvailable: 'No conversations available', adjustSearch: 'Adjust your search to continue.', connectBackend: 'Connect the backend or add a conversation to get started.', productionLogo: 'Production logo preview', saving: 'Saving…', viewPolicy: 'View policy', notAvailable: 'Not available', deliveryUnavailable: 'Delivery details not available', sendShortcut: 'Press ⌘ + Enter to send', priorityLow: 'low', priorityNormal: 'normal', priorityHigh: 'high', priorityUrgent: 'urgent', statusOpen: 'open', statusInProgress: 'in progress', statusResolved: 'resolved' },
+  en: { inbox: 'Inbox', customers: 'Customers', knowledge: 'Knowledge', reports: 'Reports', search: 'Search conversations', assigned: 'Assigned to me', open: 'Open', waiting: 'Waiting', escalated: 'Escalated', conversation: 'Conversation', context: 'Customer context', order: 'Order', activity: 'Activity', recommended: 'Recommended next step', reply: 'Reply to', send: 'Send reply', note: 'Add internal note', resolved: 'Mark as resolved', escalate: 'Escalate', ai: 'Relay Assist', all: 'All conversations', settings: 'Settings', operator: 'Operator', today: 'Today', viewCustomer: 'View customer', view: 'View', tags: 'Tags', writeReply: 'Write a reply...', replySaved: 'Reply saved to the conversation.', policyMatch: 'Policy match', shipped: 'Order shipped', payment: 'Payment captured', placed: 'Order placed', queue: 'Conversation queue', contextPanel: 'Customer context panel', close: 'Close', more: 'More actions', attach: 'Attach file', status: 'Change status', menu: 'Open conversation queue', panel: 'Open customer context', triage: 'Run AI triage', triageTitle: 'AI ticket triage', triageLoading: 'Analyzing ticket…', triageUnavailable: 'AI triage is unavailable. Check that the backend is running.', triagePriority: 'Priority', triageStatus: 'Recommended status', triageSummary: 'Summary', triageReply: 'Suggested reply', triageConfidence: 'Confidence', triageReasoning: 'Why this was suggested', useReply: 'Use suggested reply', workspaceSettings: 'Workspace settings', workspaceName: 'Workspace name', logoUrl: 'Logo URL', brandColor: 'Brand color', secondaryColor: 'Secondary color', saveSettings: 'Save changes', resetSettings: 'Reset defaults', settingsHint: 'Workspace branding loads from the API when available. This browser keeps a fallback copy.', settingsLoading: 'Loading workspace branding…', settingsLoadError: 'Using local demo branding because the workspace API is unavailable.', settingsSaveError: 'Could not save to the workspace API. Your changes are kept locally.', language: 'Language', theme: 'Toggle theme', noConversations: 'No conversations found', tryDifferentSearch: 'Try a different search.', noConversationSelected: 'No conversation selected', noConversationsAvailable: 'No conversations available', adjustSearch: 'Adjust your search to continue.', connectBackend: 'Connect the backend or add a conversation to get started.', productionLogo: 'Production logo preview', saving: 'Saving…', viewPolicy: 'View policy', notAvailable: 'Not available', deliveryUnavailable: 'Delivery details not available', sendShortcut: 'Press ⌘ + Enter to send', priorityLow: 'low', priorityNormal: 'normal', priorityHigh: 'high', priorityUrgent: 'urgent', statusOpen: 'open', statusInProgress: 'in progress', statusResolved: 'resolved', login: 'Sign in', email: 'Email', password: 'Password', signIn: 'Sign in to workspace', signOut: 'Sign out', invalidLogin: 'Could not sign in. Check your email and password.', sessionLoading: 'Restoring session…', role: 'Role', workspace: 'Workspace', viewerReadOnly: 'Viewer access is read-only.', demoCredentials: 'Demo: demo@relay.example / demo-password' },
   pl: { inbox: 'Skrzynka', customers: 'Klienci', knowledge: 'Baza wiedzy', reports: 'Raporty', search: 'Szukaj rozmów', assigned: 'Przypisane do mnie', open: 'Otwarte', waiting: 'Oczekujące', escalated: 'Eskalowane', conversation: 'Rozmowa', context: 'Kontekst klienta', order: 'Zamówienie', activity: 'Aktywność', recommended: 'Sugerowany następny krok', reply: 'Odpowiedz', send: 'Wyślij odpowiedź', note: 'Dodaj notatkę', resolved: 'Oznacz jako rozwiązane', escalate: 'Eskaluj', ai: 'Relay Assist', all: 'Wszystkie rozmowy', settings: 'Ustawienia', operator: 'Operator', today: 'Dzisiaj', viewCustomer: 'Zobacz klienta', view: 'Zobacz', tags: 'Tagi', writeReply: 'Napisz odpowiedź...', replySaved: 'Odpowiedź zapisana w rozmowie.', policyMatch: 'Zgodność z zasadą', shipped: 'Zamówienie wysłane', payment: 'Płatność zaksięgowana', placed: 'Zamówienie utworzone', queue: 'Kolejka rozmów', contextPanel: 'Panel kontekstu klienta', close: 'Zamknij', more: 'Więcej działań', attach: 'Dołącz plik', status: 'Zmień status', menu: 'Otwórz kolejkę rozmów', panel: 'Otwórz kontekst klienta', triage: 'Uruchom triage AI', triageTitle: 'Triage AI zgłoszenia', triageLoading: 'Analizowanie zgłoszenia…', triageUnavailable: 'Triage AI jest niedostępny. Sprawdź, czy backend działa.', triagePriority: 'Priorytet', triageStatus: 'Sugerowany status', triageSummary: 'Podsumowanie', triageReply: 'Sugerowana odpowiedź', triageConfidence: 'Pewność', triageReasoning: 'Dlaczego ta sugestia', useReply: 'Użyj sugerowanej odpowiedzi', workspaceSettings: 'Ustawienia przestrzeni', workspaceName: 'Nazwa przestrzeni', logoUrl: 'URL logo', brandColor: 'Kolor marki', secondaryColor: 'Kolor dodatkowy', saveSettings: 'Zapisz zmiany', resetSettings: 'Przywróć domyślne', settingsHint: 'Branding przestrzeni ładuje się z API, jeśli jest dostępne. Przeglądarka przechowuje kopię zapasową.', settingsLoading: 'Ładowanie brandingu…', settingsLoadError: 'Używam lokalnego brandingu demo, ponieważ API jest niedostępne.', settingsSaveError: 'Nie udało się zapisać w API. Zmiany zachowano lokalnie.' },
   de: { inbox: 'Posteingang', customers: 'Kunden', knowledge: 'Wissensbasis', reports: 'Berichte', search: 'Gespräche suchen', assigned: 'Mir zugewiesen', open: 'Offen', waiting: 'Wartend', escalated: 'Eskaliert', conversation: 'Gespräch', context: 'Kundenkontext', order: 'Bestellung', activity: 'Aktivität', recommended: 'Empfohlener nächster Schritt', reply: 'Antworten an', send: 'Antwort senden', note: 'Interne Notiz', resolved: 'Als gelöst markieren', escalate: 'Eskalieren', ai: 'Relay Assist', all: 'Alle Gespräche', settings: 'Einstellungen', operator: 'Operator', today: 'Heute', viewCustomer: 'Kunden ansehen', view: 'Ansehen', tags: 'Tags', writeReply: 'Antwort schreiben...', replySaved: 'Antwort in der Unterhaltung gespeichert.', policyMatch: 'Richtlinienübereinstimmung', shipped: 'Bestellung versendet', payment: 'Zahlung erfasst', placed: 'Bestellung aufgegeben', queue: 'Gesprächswarteschlange', contextPanel: 'Kundenkontext', close: 'Schließen', more: 'Weitere Aktionen', attach: 'Datei anhängen', status: 'Status ändern', menu: 'Gesprächswarteschlange öffnen', panel: 'Kundenkontext öffnen', triage: 'KI-Triage starten', triageTitle: 'KI-Ticket-Triage', triageLoading: 'Ticket wird analysiert…', triageUnavailable: 'KI-Triage ist nicht verfügbar. Prüfe, ob das Backend läuft.', triagePriority: 'Priorität', triageStatus: 'Empfohlener Status', triageSummary: 'Zusammenfassung', triageReply: 'Vorgeschlagene Antwort', triageConfidence: 'Konfidenz', triageReasoning: 'Warum diese Empfehlung', useReply: 'Vorgeschlagene Antwort verwenden', workspaceSettings: 'Workspace-Einstellungen', workspaceName: 'Workspace-Name', brandColor: 'Markenfarbe', secondaryColor: 'Sekundärfarbe', saveSettings: 'Änderungen speichern', resetSettings: 'Standardwerte zurücksetzen', settingsHint: 'Demo-Einstellungen werden in diesem Browser gespeichert, bis die Workspace-API verbunden ist.' },
   es: { inbox: 'Bandeja', customers: 'Clientes', knowledge: 'Base de conocimiento', reports: 'Informes', search: 'Buscar conversaciones', assigned: 'Asignadas a mí', open: 'Abiertas', waiting: 'En espera', escalated: 'Escaladas', conversation: 'Conversación', context: 'Contexto del cliente', order: 'Pedido', activity: 'Actividad', recommended: 'Siguiente paso recomendado', reply: 'Responder a', send: 'Enviar respuesta', note: 'Añadir nota interna', resolved: 'Marcar como resuelto', escalate: 'Escalar', ai: 'Relay Assist', all: 'Todas las conversaciones', settings: 'Configuración', operator: 'Operador', today: 'Hoy', viewCustomer: 'Ver cliente', view: 'Ver', tags: 'Etiquetas', writeReply: 'Escribe una respuesta...', replySaved: 'Respuesta guardada en la conversación.', policyMatch: 'Coincidencia de política', shipped: 'Pedido enviado', payment: 'Pago capturado', placed: 'Pedido realizado', queue: 'Cola de conversaciones', contextPanel: 'Panel de contexto del cliente', close: 'Cerrar', more: 'Más acciones', attach: 'Adjuntar archivo', status: 'Cambiar estado', menu: 'Abrir cola de conversaciones', panel: 'Abrir contexto del cliente', triage: 'Ejecutar triage de IA', triageTitle: 'Triage de ticket con IA', triageLoading: 'Analizando ticket…', triageUnavailable: 'El triage de IA no está disponible. Comprueba que el backend esté activo.', triagePriority: 'Prioridad', triageStatus: 'Estado recomendado', triageSummary: 'Resumen', triageReply: 'Respuesta sugerida', triageConfidence: 'Confianza', triageReasoning: 'Por qué se sugiere', useReply: 'Usar respuesta sugerida', workspaceSettings: 'Configuración del workspace', workspaceName: 'Nombre del workspace', brandColor: 'Color de marca', secondaryColor: 'Color secundario', saveSettings: 'Guardar cambios', resetSettings: 'Restablecer valores', settingsHint: 'La configuración demo se guarda en este navegador hasta conectar la API del workspace.' },
-  ru: { inbox: 'Входящие', customers: 'Клиенты', knowledge: 'База знаний', reports: 'Отчёты', search: 'Поиск по обращениям', assigned: 'Назначенные мне', open: 'Открытые', waiting: 'Ожидают', escalated: 'Эскалированные', conversation: 'Обращение', context: 'Контекст клиента', order: 'Заказ', activity: 'Активность', recommended: 'Рекомендуемый следующий шаг', reply: 'Ответить', send: 'Отправить ответ', note: 'Добавить внутреннюю заметку', resolved: 'Отметить решённым', escalate: 'Эскалировать', ai: 'Relay Assist', all: 'Все обращения', settings: 'Настройки', operator: 'Оператор', today: 'Сегодня', viewCustomer: 'Открыть клиента', view: 'Открыть', tags: 'Теги', writeReply: 'Напишите ответ…', replySaved: 'Ответ сохранён в обращении.', policyMatch: 'Соответствует политике', shipped: 'Заказ отправлен', payment: 'Платёж получен', placed: 'Заказ оформлен', queue: 'Очередь обращений', contextPanel: 'Панель контекста клиента', close: 'Закрыть', more: 'Дополнительные действия', attach: 'Прикрепить файл', status: 'Изменить статус', menu: 'Открыть очередь обращений', panel: 'Открыть контекст клиента', triage: 'Запустить AI-анализ', triageTitle: 'AI-анализ обращения', triageLoading: 'Анализируем обращение…', triageUnavailable: 'AI-анализ недоступен. Проверьте, запущен ли backend.', triagePriority: 'Приоритет', triageStatus: 'Рекомендуемый статус', triageSummary: 'Краткое резюме', triageReply: 'Предлагаемый ответ', triageConfidence: 'Уверенность', triageReasoning: 'Почему это предложено', useReply: 'Использовать предложенный ответ', workspaceSettings: 'Настройки workspace', workspaceName: 'Название workspace', logoUrl: 'URL логотипа', brandColor: 'Основной цвет', secondaryColor: 'Дополнительный цвет', saveSettings: 'Сохранить изменения', resetSettings: 'Сбросить настройки', settingsHint: 'Брендинг workspace загружается через API. Если API недоступен, браузер использует локальную копию.', settingsLoading: 'Загружаем брендинг workspace…', settingsLoadError: 'Используется локальный demo-брендинг: API workspace недоступен.', settingsSaveError: 'Не удалось сохранить настройки через API. Изменения сохранены локально.', language: 'Язык', theme: 'Тема', noConversations: 'Обращения не найдены', tryDifferentSearch: 'Попробуйте изменить поисковый запрос.', noConversationSelected: 'Обращение не выбрано', noConversationsAvailable: 'Нет доступных обращений', adjustSearch: 'Измените запрос, чтобы продолжить.', connectBackend: 'Подключите backend или добавьте обращение, чтобы начать.', productionLogo: 'Предпросмотр production-логотипа', saving: 'Сохраняем…', viewPolicy: 'Открыть политику', notAvailable: 'Нет данных', deliveryUnavailable: 'Данные о доставке недоступны', sendShortcut: 'Нажмите ⌘ + Enter, чтобы отправить', priorityLow: 'низкий', priorityNormal: 'обычный', priorityHigh: 'высокий', priorityUrgent: 'срочный', statusOpen: 'открыт', statusInProgress: 'в работе', statusResolved: 'решён' },
+  ru: { inbox: 'Входящие', customers: 'Клиенты', knowledge: 'База знаний', reports: 'Отчёты', search: 'Поиск по обращениям', assigned: 'Назначенные мне', open: 'Открытые', waiting: 'Ожидают', escalated: 'Эскалированные', conversation: 'Обращение', context: 'Контекст клиента', order: 'Заказ', activity: 'Активность', recommended: 'Рекомендуемый следующий шаг', reply: 'Ответить', send: 'Отправить ответ', note: 'Добавить внутреннюю заметку', resolved: 'Отметить решённым', escalate: 'Эскалировать', ai: 'Relay Assist', all: 'Все обращения', settings: 'Настройки', operator: 'Оператор', today: 'Сегодня', viewCustomer: 'Открыть клиента', view: 'Открыть', tags: 'Теги', writeReply: 'Напишите ответ…', replySaved: 'Ответ сохранён в обращении.', policyMatch: 'Соответствует политике', shipped: 'Заказ отправлен', payment: 'Платёж получен', placed: 'Заказ оформлен', queue: 'Очередь обращений', contextPanel: 'Панель контекста клиента', close: 'Закрыть', more: 'Дополнительные действия', attach: 'Прикрепить файл', status: 'Изменить статус', menu: 'Открыть очередь обращений', panel: 'Открыть контекст клиента', triage: 'Запустить AI-анализ', triageTitle: 'AI-анализ обращения', triageLoading: 'Анализируем обращение…', triageUnavailable: 'AI-анализ недоступен. Проверьте, запущен ли backend.', triagePriority: 'Приоритет', triageStatus: 'Рекомендуемый статус', triageSummary: 'Краткое резюме', triageReply: 'Предлагаемый ответ', triageConfidence: 'Уверенность', triageReasoning: 'Почему это предложено', useReply: 'Использовать предложенный ответ', workspaceSettings: 'Настройки workspace', workspaceName: 'Название workspace', logoUrl: 'URL логотипа', brandColor: 'Основной цвет', secondaryColor: 'Дополнительный цвет', saveSettings: 'Сохранить изменения', resetSettings: 'Сбросить настройки', settingsHint: 'Брендинг workspace загружается через API. Если API недоступен, браузер использует локальную копию.', settingsLoading: 'Загружаем брендинг workspace…', settingsLoadError: 'Используется локальный demo-брендинг: API workspace недоступен.', settingsSaveError: 'Не удалось сохранить настройки через API. Изменения сохранены локально.', language: 'Язык', theme: 'Тема', noConversations: 'Обращения не найдены', tryDifferentSearch: 'Попробуйте изменить поисковый запрос.', noConversationSelected: 'Обращение не выбрано', noConversationsAvailable: 'Нет доступных обращений', adjustSearch: 'Измените запрос, чтобы продолжить.', connectBackend: 'Подключите backend или добавьте обращение, чтобы начать.', productionLogo: 'Предпросмотр production-логотипа', saving: 'Сохраняем…', viewPolicy: 'Открыть политику', notAvailable: 'Нет данных', deliveryUnavailable: 'Данные о доставке недоступны', sendShortcut: 'Нажмите ⌘ + Enter, чтобы отправить', priorityLow: 'низкий', priorityNormal: 'обычный', priorityHigh: 'высокий', priorityUrgent: 'срочный', statusOpen: 'открыт', statusInProgress: 'в работе', statusResolved: 'решён', login: 'Войти', email: 'Email', password: 'Пароль', signIn: 'Войти в workspace', signOut: 'Выйти', invalidLogin: 'Не удалось войти. Проверьте email и пароль.', sessionLoading: 'Восстанавливаем сессию…', role: 'Роль', workspace: 'Workspace', viewerReadOnly: 'Режим просмотра: изменения недоступны.', demoCredentials: 'Demo: demo@relay.example / demo-password' },
 }
 type Copy = typeof copy.en & Partial<{
   language: string
@@ -43,6 +46,18 @@ type Copy = typeof copy.en & Partial<{
   notAvailable: string
   deliveryUnavailable: string
   sendShortcut: string
+  login: string
+  email: string
+  password: string
+  signIn: string
+  signOut: string
+  invalidLogin: string
+  sessionLoading: string
+  role: string
+  workspace: string
+  viewerReadOnly: string
+  demoCredentials: string
+  secureWorkspace: string
 }>
 
 const localeOptions: Array<{ value: Locale; label: string }> = [
@@ -75,7 +90,19 @@ function App() {
   const [settingsLoading, setSettingsLoading] = useState(true)
   const [settingsError, setSettingsError] = useState<string | null>(null)
   const [settingsSaving, setSettingsSaving] = useState(false)
+  const [session, setSession] = useState<AuthSession | null>(() => {
+    try { return JSON.parse(sessionStorage.getItem('relay-auth-session') ?? 'null') as AuthSession | null } catch { return null }
+  })
+  const [authChecking, setAuthChecking] = useState(true)
+  const [authError, setAuthError] = useState(false)
+  const [email, setEmail] = useState(DEMO_AUTH_ENABLED ? 'demo@relay.example' : '')
+  const [password, setPassword] = useState(DEMO_AUTH_ENABLED ? 'demo-password' : '')
   const t = { ...copy.en, ...copy[locale] } as Copy
+  const user = session?.user
+  const canOperate = !user || user.role !== 'viewer'
+  const canManageWorkspace = !user || user.role === 'owner' || user.role === 'admin'
+  const authHeaders = (json = false): HeadersInit => ({ ...(json ? { 'Content-Type': 'application/json' } : {}), ...(session ? { Authorization: `Bearer ${session.access_token}`, 'X-Workspace-ID': String(session.user.workspace_id) } : DEMO_AUTH_ENABLED ? { 'X-Workspace-ID': '1' } : {}) })
+  const authFetch = (input: RequestInfo | URL, init: RequestInit = {}) => fetch(input, { ...init, headers: { ...authHeaders(), ...(init.headers ?? {}) } })
   const filtered = useMemo(() => tickets.filter((ticket) => `${ticket.customer} ${ticket.subject} ${ticket.preview}`.toLowerCase().includes(query.toLowerCase())), [query, tickets])
   const selectedTicket = filtered.find((ticket) => ticket.id === selectedId) ?? null
   const selectedTriage = selectedTicket && triage?.ticketId === selectedTicket.id ? triage.result : null
@@ -97,6 +124,16 @@ function App() {
     deliveryUnavailable: t.deliveryUnavailable ?? 'Delivery details not available',
     sendShortcut: t.sendShortcut ?? 'Press ⌘ + Enter to send',
   }
+  function handleSignOut() { sessionStorage.removeItem('relay-auth-session'); setSession(null) }
+  useEffect(() => {
+    const token = session?.access_token
+    if (!token) { setAuthChecking(false); return }
+    fetch(`${API_BASE_URL}/auth/me`, { headers: authHeaders() })
+      .then((response) => response.ok ? response.json() as Promise<AuthUser> : Promise.reject(new Error('Session expired')))
+      .then((user) => setSession((current) => current ? { ...current, user } : current))
+      .catch(() => { handleSignOut(); setAuthError(true) })
+      .finally(() => setAuthChecking(false))
+  }, [])
   useEffect(() => { document.documentElement.dataset.theme = dark ? 'dark' : 'light' }, [dark])
   useEffect(() => {
     if (!settingsOpen) return
@@ -107,6 +144,15 @@ function App() {
     return () => { document.body.style.overflow = previousOverflow; window.removeEventListener('keydown', handleKeyDown) }
   }, [settingsOpen])
   useEffect(() => { localStorage.setItem('relay-locale', locale); document.documentElement.lang = locale }, [locale])
+  useEffect(() => {
+    const token = session?.access_token
+    if (!token) { setAuthChecking(false); return }
+    fetch(`${API_BASE_URL}/auth/me`, { headers: { Authorization: `Bearer ${token}` } })
+      .then((response) => response.ok ? response.json() as Promise<AuthUser> : Promise.reject(new Error('Session expired')))
+      .then((currentUser) => setSession((current) => current ? { ...current, user: currentUser } : current))
+      .catch(() => { handleSignOut(); setAuthError(true) })
+      .finally(() => setAuthChecking(false))
+  }, [])
   useEffect(() => {
     let active = true
     const fallback = () => {
@@ -119,7 +165,7 @@ function App() {
         }
       } catch { /* localStorage is an optional demo persistence layer. */ }
     }
-    fetch(`${API_BASE_URL}/workspaces/settings`, { headers: { 'X-Workspace-ID': WORKSPACE_ID } })
+    fetch(`${API_BASE_URL}/workspaces/settings`, { headers: authHeaders() })
       .then((response) => response.ok ? response.json() as Promise<ApiWorkspaceSettings> : Promise.reject(new Error('Workspace settings request failed')))
       .then((remote) => {
         if (!active) return
@@ -132,7 +178,7 @@ function App() {
       .catch(() => { if (active) { fallback(); setSettingsError('fallback') } })
       .finally(() => { if (active) setSettingsLoading(false) })
     return () => { active = false }
-  }, [])
+  }, [session])
   useEffect(() => {
     document.documentElement.style.setProperty('--workspace-brand', workspaceSettings.brandColor)
     document.documentElement.style.setProperty('--workspace-secondary', workspaceSettings.secondaryColor)
@@ -148,7 +194,7 @@ function App() {
     setSettingsSaving(true)
     setSettingsError(null)
     try {
-      const response = await fetch(`${API_BASE_URL}/workspaces/settings`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', 'X-Workspace-ID': WORKSPACE_ID }, body: JSON.stringify({ product_name: next.name, logo_url: next.logoUrl, brand_color: next.brandColor, brand_secondary_color: next.secondaryColor }) })
+      const response = await fetch(`${API_BASE_URL}/workspaces/settings`, { method: 'PATCH', headers: authHeaders(true), body: JSON.stringify({ product_name: next.name, logo_url: next.logoUrl, brand_color: next.brandColor, brand_secondary_color: next.secondaryColor }) })
       if (!response.ok) throw new Error('Workspace settings save failed')
       const remote = await response.json() as ApiWorkspaceSettings
       const saved: WorkspaceSettings = { name: remote.product_name, logoUrl: remote.logo_url || defaultWorkspaceSettings.logoUrl, brandColor: remote.brand_color, secondaryColor: remote.brand_secondary_color }
@@ -164,11 +210,11 @@ function App() {
     if (!filtered.some((ticket) => ticket.id === selectedId)) setSelectedId(filtered[0].id)
   }, [filtered, selectedId])
   useEffect(() => {
-    const baseUrl = import.meta.env.VITE_API_BASE_URL
-    if (!baseUrl) return
+    const baseUrl = API_BASE_URL
+    if (!session && !DEMO_AUTH_ENABLED) return
     Promise.all([
-      fetch(`${baseUrl}/tickets`).then((response) => response.ok ? response.json() as Promise<ApiTicket[]> : Promise.reject(new Error('Tickets request failed'))),
-      fetch(`${baseUrl}/customers`).then((response) => response.ok ? response.json() as Promise<ApiCustomer[]> : Promise.reject(new Error('Customers request failed'))),
+      fetch(`${baseUrl}/tickets`, { headers: authHeaders() }).then((response) => response.ok ? response.json() as Promise<ApiTicket[]> : Promise.reject(new Error('Tickets request failed'))),
+      fetch(`${baseUrl}/customers`, { headers: authHeaders() }).then((response) => response.ok ? response.json() as Promise<ApiCustomer[]> : Promise.reject(new Error('Customers request failed'))),
     ]).then(([apiTickets, customers]) => {
       const customerMap = new Map(customers.map((customer) => [customer.id, customer]))
       const mapped = apiTickets.map((ticket) => {
@@ -178,14 +224,25 @@ function App() {
       })
       if (mapped.length) { setTickets(mapped); setSelectedId(mapped[0].id) }
     }).catch(() => { /* Demo fallback is intentional when the API is unavailable. */ })
-  }, [])
+  }, [session])
+
+  async function signIn(event: FormEvent) {
+    event.preventDefault(); setAuthError(false)
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) })
+      if (!response.ok) throw new Error('Login failed')
+      const next = await response.json() as AuthSession
+      sessionStorage.setItem('relay-auth-session', JSON.stringify(next)); setSession(next)
+    } catch { setAuthError(true) }
+  }
+  function signOut() { handleSignOut(); setTickets(demoTickets); setSettingsOpen(false) }
 
   async function runTriage() {
-    if (!selectedTicket || triageLoading) return
+    if (!selectedTicket || triageLoading || !canOperate) return
     setTriageLoading(true)
     setTriageError(null)
     try {
-      const response = await fetch(`${API_BASE_URL}/tickets/${selectedTicket.id}/triage`, { method: 'POST', headers: { 'X-Workspace-ID': WORKSPACE_ID } })
+      const response = await fetch(`${API_BASE_URL}/tickets/${selectedTicket.id}/triage`, { method: 'POST', headers: authHeaders() })
       if (!response.ok) throw new Error('Triage request failed')
       setTriage({ ticketId: selectedTicket.id, result: await response.json() as TriageResult })
     } catch {
@@ -197,12 +254,12 @@ function App() {
   }
 
   async function updateTicketStatus(nextStatus: 'in_progress' | 'resolved') {
-    if (!selectedTicket || actionPending) return
+    if (!selectedTicket || actionPending || !canOperate) return
     setActionPending(true)
     const localStatus: Ticket['status'] = nextStatus === 'resolved' ? 'resolved' : 'pending'
     const updateLocal = () => setTickets((current) => current.map((ticket) => ticket.id === selectedTicket.id ? { ...ticket, status: localStatus } : ticket))
     try {
-      const response = await fetch(`${API_BASE_URL}/tickets/${selectedTicket.id}/status`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', 'X-Workspace-ID': WORKSPACE_ID }, body: JSON.stringify({ status: nextStatus }) })
+      const response = await fetch(`${API_BASE_URL}/tickets/${selectedTicket.id}/status`, { method: 'PATCH', headers: authHeaders(true), body: JSON.stringify({ status: nextStatus }) })
       if (!response.ok) throw new Error('Status update failed')
       updateLocal()
     } catch {
@@ -212,14 +269,17 @@ function App() {
     }
   }
 
+  if (authChecking) return <AuthScreen copy={t} loading />
+  if (!session) return <AuthScreen copy={t} email={email} password={password} error={authError} onEmail={setEmail} onPassword={setPassword} onSubmit={(event) => void signIn(event)} />
+
   return <div className="app-shell" style={{ '--workspace-name': `"${workspaceSettings.name}"` } as CSSProperties}>
     <aside className="sidebar">
       <div className="brand"><BrandLogo src={workspaceSettings.logoUrl} name={workspaceSettings.name} /><span>{workspaceSettings.name.split(' ')[0]} <em>{workspaceSettings.name.split(' ').slice(1).join(' ')}</em></span></div>
       <nav className="primary-nav"><NavItem icon={<Inbox />} label={t.inbox} active count="12" /><NavItem icon={<UserRound />} label={t.customers} /><NavItem icon={<CircleHelp />} label={t.knowledge} /><NavItem icon={<LayoutDashboard />} label={t.reports} /></nav>
-      <div className="sidebar-bottom"><NavItem icon={<Settings />} label={t.settings} onClick={openSettings} /><div className="profile"><span className="avatar small">JD</span><span><strong>Jordan Davis</strong><small>{t.operator}</small></span><button className="icon-btn" aria-label={t.more}><MoreHorizontal size={17} /></button></div></div>
+      <div className="sidebar-bottom">{canManageWorkspace && <NavItem icon={<Settings />} label={t.settings} onClick={openSettings} />}<div className="profile"><span className="avatar small">{user?.email.slice(0, 2).toUpperCase() ?? 'JD'}</span><span><strong>{user?.email ?? 'Jordan Davis'}</strong><small>{user?.role ?? t.operator} · {t.workspace} {user?.workspace_id ?? 1}</small></span><button className="icon-btn" onClick={signOut} aria-label={t.signOut}><LogOut size={17} /></button></div></div>
     </aside>
     <main className="workspace">
-      <header className="topbar"><button className="mobile-menu icon-btn" onClick={() => setMobilePanel('queue')} aria-label={t.menu} aria-expanded={mobilePanel === 'queue'}><Menu size={19} /></button><div className="header-brand" aria-label={`${workspaceSettings.name} workspace`}><BrandLogo src={workspaceSettings.logoUrl} name={workspaceSettings.name} /><span><strong>{workspaceSettings.name.split(' ')[0]}</strong><small>{workspaceSettings.name.split(' ').slice(1).join(' ')}</small></span></div><div className="page-heading"><span className="eyebrow">WORKSPACE</span><h1>{t.inbox}</h1></div><div className="top-actions"><label className="search"><Search size={17} /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t.search} aria-label={t.search} /></label><label className="select-wrap" title={uiCopy.language}><Languages size={16} aria-hidden="true" /><span className="sr-only">{uiCopy.language}</span><select value={locale} onChange={(e) => setLocale(e.target.value as Locale)} aria-label={uiCopy.language}>{localeOptions.map((option) => <option value={option.value} key={option.value}>{option.value.toUpperCase()} · {option.label}</option>)}</select><ChevronDown size={14} aria-hidden="true" /></label><button className="icon-btn" onClick={() => setDark(!dark)} aria-label={uiCopy.theme} aria-pressed={dark}>{dark ? <Sun size={18} /> : <Moon size={18} />}</button><button className="icon-btn" onClick={openSettings} aria-label={t.settings}><Settings size={18} /></button></div></header>
+      <header className="topbar"><button className="mobile-menu icon-btn" onClick={() => setMobilePanel('queue')} aria-label={t.menu} aria-expanded={mobilePanel === 'queue'}><Menu size={19} /></button><div className="header-brand" aria-label={`${workspaceSettings.name} workspace`}><BrandLogo src={workspaceSettings.logoUrl} name={workspaceSettings.name} /><span><strong>{workspaceSettings.name.split(' ')[0]}</strong><small>{workspaceSettings.name.split(' ').slice(1).join(' ')}</small></span></div><div className="page-heading"><span className="eyebrow">{t.workspace.toUpperCase()} · {user?.role ?? t.operator}</span><h1>{t.inbox}</h1></div><div className="top-actions"><label className="search"><Search size={17} /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t.search} aria-label={t.search} /></label><label className="select-wrap" title={uiCopy.language}><Languages size={16} aria-hidden="true" /><span className="sr-only">{uiCopy.language}</span><select value={locale} onChange={(e) => setLocale(e.target.value as Locale)} aria-label={uiCopy.language}>{localeOptions.map((option) => <option value={option.value} key={option.value}>{option.value.toUpperCase()} · {option.label}</option>)}</select><ChevronDown size={14} aria-hidden="true" /></label><button className="icon-btn" onClick={() => setDark(!dark)} aria-label={uiCopy.theme} aria-pressed={dark}>{dark ? <Sun size={18} /> : <Moon size={18} />}</button>{canManageWorkspace && <button className="icon-btn" onClick={openSettings} aria-label={t.settings}><Settings size={18} /></button>}</div></header>
       {mobilePanel && <button className="mobile-scrim" aria-label={t.close} onClick={() => setMobilePanel(null)} />}
       <div className="workspace-grid">
         <section className={`queue panel ${mobilePanel === 'queue' ? 'mobile-open' : ''}`} aria-label={t.queue}><div className="panel-header"><div><h2>{t.all}</h2><p>{filtered.length} {locale === 'ru' ? 'обращений' : 'conversations'}</p></div><div className="panel-header-actions"><button className="icon-btn mobile-close" onClick={() => setMobilePanel(null)} aria-label={t.close}><X size={17} /></button><button className="icon-btn" aria-label={t.more}><MoreHorizontal size={18} /></button></div></div><div className="queue-tabs"><button className="active">{t.assigned}<span>8</span></button><button>{t.open}<span>4</span></button></div><div className="ticket-list">{filtered.length ? filtered.map((ticket) => <button className={`ticket-item ${ticket.id === selectedId ? 'selected' : ''}`} key={ticket.id} onClick={() => { setSelectedId(ticket.id); setSent(false); setTriageError(null); setMobilePanel(null) }}><span className="avatar">{ticket.initials}</span><span className="ticket-main"><span className="ticket-line"><strong>{ticket.customer}</strong><time>{ticket.time}</time></span><span className="subject">{ticket.subject}</span><span className="preview">{ticket.preview}</span><span className={`status ${ticket.status}`}>{ticket.status === 'escalated' ? t.escalated : ticket.status === 'pending' ? t.waiting : ticket.status === 'resolved' ? t.resolved : t.open}</span></span></button>) : <div className="empty-state" role="status"><Search size={18} aria-hidden="true" /><strong>{uiCopy.noConversations}</strong><span>{uiCopy.tryDifferentSearch}</span></div>}</div></section>
@@ -229,6 +289,10 @@ function App() {
     </main>
     {settingsOpen && <WorkspaceSettingsPanel settings={draftSettings} copy={t} loading={settingsLoading} saving={settingsSaving} error={settingsError} onChange={setDraftSettings} onSave={() => void saveSettings()} onReset={resetSettings} onClose={() => setSettingsOpen(false)} />}
   </div>
+}
+
+function AuthScreen({ copy, email = '', password = '', error = false, loading = false, onEmail, onPassword, onSubmit }: { copy: Copy; email?: string; password?: string; error?: boolean; loading?: boolean; onEmail?: (value: string) => void; onPassword?: (value: string) => void; onSubmit?: (event: FormEvent<HTMLFormElement>) => void }) {
+  return <main className="auth-shell"><section className="auth-card" aria-labelledby="auth-title"><div className="auth-brand"><BrandLogo src={PRODUCTION_LOGO_URL} name="Relay Operations" /><span><strong>Relay</strong><small>Operations</small></span></div><div className="auth-icon"><ShieldCheck size={20} /></div><p className="eyebrow">{copy.workspace}</p><h1 id="auth-title">{copy.login}</h1><p className="auth-subtitle">{copy.secureWorkspace ?? 'Secure workspace access for your operations team.'}</p>{error && <p className="auth-error" role="alert">{copy.invalidLogin}</p>}{loading ? <p className="auth-loading" role="status">{copy.sessionLoading}</p> : <form onSubmit={onSubmit} className="auth-form"><label><span>{copy.email}</span><input type="email" value={email} onChange={(event) => onEmail?.(event.target.value)} autoComplete="email" required /></label><label><span>{copy.password}</span><input type="password" value={password} onChange={(event) => onPassword?.(event.target.value)} autoComplete="current-password" required /></label><button className="button primary auth-submit" type="submit"><KeyRound size={16} /> {copy.signIn}</button></form>}<div className="auth-demo"><strong>{copy.demoCredentials}</strong><span>{DEMO_AUTH_ENABLED ? 'Demo auth is enabled for local development.' : 'Demo credentials work only when enabled by the backend.'}</span></div></section></main>
 }
 
 function NavItem({ icon, label, active, count, onClick }: { icon: ReactNode; label: string; active?: boolean; count?: string; onClick?: () => void }) { return <button className={`nav-item ${active ? 'active' : ''}`} onClick={onClick}>{icon}<span>{label}</span>{count && <b>{count}</b>}</button> }
