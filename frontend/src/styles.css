@@ -67,10 +67,10 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .auth-shell::before { width: 520px; height: 520px; top: -280px; left: -160px; background: color-mix(in srgb, var(--color-brand) 17%, transparent); }
 .auth-shell::after { width: 420px; height: 420px; right: -150px; bottom: -210px; background: color-mix(in srgb, var(--color-brand-secondary) 14%, transparent); }
 .auth-topbar, .auth-layout, .auth-footer { position: relative; z-index: 1; width: min(1120px, 100%); margin-inline: auto; }
-.auth-topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 54px; }
+.auth-topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 54px; z-index: 5; }
 .auth-status { display: flex; align-items: center; gap: 8px; color: var(--color-ink-muted); font-size: var(--text-xs); font-weight: 650; letter-spacing: .01em; }
 .auth-status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--color-success); box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-success) 14%, transparent); }
-.auth-controls { display: flex; align-items: center; gap: 8px; }
+.auth-controls { position: relative; z-index: 10; display: flex; align-items: center; gap: 8px; }
 .auth-language, .auth-theme { display: inline-flex; align-items: center; gap: 7px; min-height: 36px; padding: 0 10px; border: 1px solid var(--color-border); border-radius: var(--radius-control); color: var(--color-ink-muted); background: color-mix(in srgb, var(--color-surface) 82%, transparent); }
 .auth-language select { appearance: none; max-width: 148px; border: 0; outline: 0; color: var(--color-ink); background: transparent; font-size: var(--text-xs); font-weight: 700; cursor: pointer; }
 .auth-language select option, .select-wrap select option { color: #18212b; background: #ffffff; }
