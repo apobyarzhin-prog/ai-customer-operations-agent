@@ -1,5 +1,6 @@
 from uuid import uuid4
 
+import jwt
 from fastapi.testclient import TestClient
 
 from app.core.auth import create_access_token, hash_password
@@ -296,6 +297,34 @@ def test_login_and_token_determine_workspace_scope() -> None:
     assert client.get("/customers").status_code == 200  # explicit local demo fallback
 
 
+def test_login_rejects_invalid_password_without_disclosing_account_state() -> None:
+    workspace_id = create_workspace(str(uuid4()))
+    user, _ = create_user(workspace_id, "agent", "invalid-password")
+
+    response = client.post(
+        "/auth/login",
+        json={"email": user.email, "password": "wrong password"},
+    )
+
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Invalid email or password"
+
+
+def test_forged_token_is_rejected() -> None:
+    workspace_id = create_workspace(str(uuid4()))
+    user, _ = create_user(workspace_id, "agent", "forged-token")
+    forged_token = jwt.encode(
+        {"sub": str(user.id), "workspace_id": workspace_id, "role": "owner"},
+        "attacker-controlled-secret",
+        algorithm="HS256",
+    )
+
+    response = client.get("/auth/me", headers={"Authorization": f"Bearer {forged_token}"})
+
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Invalid or expired token"
+
+
 def test_roles_allow_read_only_viewer_but_block_writes() -> None:
     workspace_id = create_workspace(str(uuid4()))
     _, token = create_user(workspace_id, "viewer", "viewer")
@@ -305,6 +334,42 @@ def test_roles_allow_read_only_viewer_but_block_writes() -> None:
         "/customers", headers=headers,
         json={"email": f"blocked-{uuid4()}@example.com", "full_name": "Blocked"},
     ).status_code == 403
+
+
+def test_role_matrix_enforces_settings_and_record_write_permissions() -> None:
+    workspace_id = create_workspace(str(uuid4()))
+    for role in ("owner", "admin", "agent"):
+        _, token = create_user(workspace_id, role, f"write-{role}")
+        headers = {"Authorization": f"Bearer {token}"}
+        assert client.post(
+            "/customers",
+            headers=headers,
+            json={"email": f"{role}-{uuid4()}@example.com", "full_name": role.title()},
+        ).status_code == 201
+
+    _, agent_token = create_user(workspace_id, "agent", "settings-agent")
+    assert client.patch(
+        "/workspaces/settings",
+        headers={"Authorization": f"Bearer {agent_token}"},
+        json={"product_name": "Should not change"},
+    ).status_code == 403
+
+
+def test_authenticated_workspace_header_cannot_select_another_workspace() -> None:
+    first_workspace = create_workspace(str(uuid4()))
+    second_workspace = create_workspace(str(uuid4()))
+    _, token = create_user(first_workspace, "agent", "header-mismatch")
+
+    response = client.get(
+        "/customers",
+        headers={
+            "Authorization": f"Bearer {token}",
+            "X-Workspace-ID": str(second_workspace),
+        },
+    )
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Workspace header does not match token"
 
 
 def test_missing_bearer_is_rejected_when_demo_auth_is_disabled(monkeypatch) -> None:
