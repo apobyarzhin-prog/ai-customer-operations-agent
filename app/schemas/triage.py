@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field
 
 TriagePriority = Literal["low", "normal", "high", "urgent"]
 TriageStatus = Literal["open", "in_progress", "resolved"]
+TriageProvider = Literal["openai", "demo", "demo_fallback"]
 
 
 class TicketTriageRead(BaseModel):
@@ -15,4 +16,4 @@ class TicketTriageRead(BaseModel):
     suggested_reply: str = Field(min_length=1)
     confidence: float = Field(ge=0, le=1)
     reasoning: list[str] = Field(min_length=1)
-
+    provider: TriageProvider

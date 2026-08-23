@@ -9,7 +9,7 @@ from urllib.request import Request, urlopen
 
 from app.core.config import Settings, get_settings
 from app.models.ticket import Ticket
-from app.schemas.triage import TicketTriageRead, TriagePriority, TriageStatus
+from app.schemas.triage import TicketTriageRead, TriagePriority, TriageProvider, TriageStatus
 
 
 @dataclass(frozen=True)
@@ -20,6 +20,7 @@ class TriageResult:
     suggested_reply: str
     confidence: float
     reasoning: list[str]
+    provider: TriageProvider
 
     def to_schema(self) -> TicketTriageRead:
         return TicketTriageRead(
@@ -29,6 +30,7 @@ class TriageResult:
             suggested_reply=self.suggested_reply,
             confidence=self.confidence,
             reasoning=self.reasoning,
+            provider=self.provider,
         )
 
 
@@ -110,6 +112,7 @@ class DemoTicketTriageProvider(TicketTriageProvider):
             suggested_reply=suggested_reply,
             confidence=confidence,
             reasoning=reasoning,
+            provider="demo",
         )
 
 
@@ -179,6 +182,7 @@ class OpenAICompatibleTicketTriageProvider(TicketTriageProvider):
                 suggested_reply=result["suggested_reply"],
                 confidence=float(result["confidence"]),
                 reasoning=[str(item) for item in result["reasoning"]],
+                provider="openai",
             )
         except (HTTPError, URLError, TimeoutError, KeyError, IndexError, TypeError, ValueError, json.JSONDecodeError) as exc:
             if not self.settings.triage_llm_fallback_to_demo:
@@ -194,6 +198,7 @@ class OpenAICompatibleTicketTriageProvider(TicketTriageProvider):
             suggested_reply=result.suggested_reply,
             confidence=result.confidence,
             reasoning=[reason, *result.reasoning],
+            provider="demo_fallback",
         )
 
 

@@ -611,3 +611,7 @@ Recorded the scrollbar/layout refinement in commit `6db1eb0`: scroll areas reser
 ## 2026-08-23 — LLM provider integration started
 
 The next stage is now planned: connect a real LLM provider through the existing provider boundary. This stage is pending provider selection and API credentials, structured-output contract, timeout/retry policy, prompt/versioning strategy, cost and usage logging, safety checks, and evaluation coverage. The deterministic demo triage provider remains the active implementation until those criteria are completed and verified.
+
+## 2026-08-23 — Triage provider transparency
+
+The triage API now returns the actual source of each recommendation: `openai`, `demo`, or `demo_fallback`. The frontend displays this as a visible provider marker in the AI analysis card, so operators can distinguish a real OpenAI response from local demo logic or an automatic fallback. Tests force the demo provider and remain offline even when a developer has a local API key configured; `29 passed` and the frontend production build passes.

@@ -173,8 +173,11 @@
 ## CP-017 — Scrollbar/layout refinement and LLM provider integration
 
 - [x] Record scrollbar/layout stability fix (`6db1eb0`)
-- [ ] Select the real LLM provider and configure secrets
-- [ ] Define and test the structured triage response contract
-- [ ] Add timeout, retry, cost/usage logging, and failure handling
+- [x] Select OpenAI-compatible provider and configure local secrets outside Git
+- [x] Define and test the structured triage response contract
+- [x] Add timeout and explicit fallback/failure handling
+- [x] Expose the actual triage source in the API and UI (`OpenAI`, `Demo`, `Demo fallback`)
+- [x] Keep tests offline even when a local API key is configured
+- [ ] Add retry and cost/usage logging
 - [ ] Add safety boundaries and evaluation cases before enabling the real provider
-- [ ] Keep the deterministic demo provider as the fallback until verification is complete
+- [x] Keep the deterministic demo provider available as an explicit fallback

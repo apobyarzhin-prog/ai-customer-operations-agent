@@ -252,6 +252,7 @@ def test_ticket_triage_is_deterministic_and_workspace_scoped() -> None:
         "summary": "Payment failed and order is blocked: The payment failed and I need help urgently.",
         "suggested_reply": "Thanks for contacting us. We have reviewed your request and routed it to our support team. We will follow up with the next update.",
         "confidence": 0.9,
+        "provider": "demo",
         "reasoning": [
             "The ticket describes a likely customer-impacting issue.",
             "Matched: failed.",
