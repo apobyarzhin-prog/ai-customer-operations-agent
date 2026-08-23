@@ -14,8 +14,16 @@ type AuthUser = { id: number; email: string; workspace_id: number; role: Role }
 type AuthSession = { access_token: string; token_type: string; expires_in: number; user: AuthUser }
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000'
 const DEMO_AUTH_ENABLED = import.meta.env.VITE_DEMO_AUTH_ENABLED === 'true'
+const COOKIE_AUTH_ENABLED = import.meta.env.VITE_COOKIE_AUTH === 'true' || new URL(API_BASE_URL, window.location.origin).origin === window.location.origin
+const API_CREDENTIALS: RequestCredentials = COOKIE_AUTH_ENABLED ? 'include' : 'same-origin'
 const PRODUCTION_LOGO_URL = '/relay-mark.svg'
 const defaultWorkspaceSettings: WorkspaceSettings = { name: 'Relay Operations', logoUrl: PRODUCTION_LOGO_URL, brandColor: '#D97706', secondaryColor: '#0F766E' }
+
+function readCookie(name: string): string | null {
+  const prefix = `${name}=`
+  const value = document.cookie.split('; ').find((cookie) => cookie.startsWith(prefix))
+  return value ? decodeURIComponent(value.slice(prefix.length)) : null
+}
 
 const demoTickets: Ticket[] = [
   { id: 1, customer: 'Maya Chen', initials: 'MC', subject: 'Package arrived damaged', preview: 'Hi, the box was damaged when it arrived and one item is missing.', time: '10:42', status: 'open', channel: 'Email', order: '#10482', email: 'maya.chen@example.com', total: '$129.00', customerMessage: 'Hi, the box was damaged when it arrived and one item is missing.', agentMessage: 'I’m sorry about the condition your package arrived in. I’m checking the order details now and will help get this resolved.', policy: 'Damaged delivery', recommendedAction: 'Offer a replacement for the missing item and waive the reshipping fee.', orderStatus: 'In transit', delivery: 'Expected delivery · Dec 14', tags: ['damaged-delivery', 'priority'] },
@@ -103,8 +111,20 @@ function App() {
   const user = session?.user
   const canOperate = !user || user.role !== 'viewer'
   const canManageWorkspace = !user || user.role === 'owner' || user.role === 'admin'
-  const authHeaders = (json = false): HeadersInit => ({ ...(json ? { 'Content-Type': 'application/json' } : {}), ...(session ? { Authorization: `Bearer ${session.access_token}`, 'X-Workspace-ID': String(session.user.workspace_id) } : DEMO_AUTH_ENABLED ? { 'X-Workspace-ID': '1' } : {}) })
-  const authFetch = (input: RequestInfo | URL, init: RequestInit = {}) => fetch(input, { ...init, headers: { ...authHeaders(), ...(init.headers ?? {}) } })
+  const authHeaders = (json = false, activeSession = session): HeadersInit => ({ ...(json ? { 'Content-Type': 'application/json' } : {}), ...(activeSession ? { Authorization: `Bearer ${activeSession.access_token}`, 'X-Workspace-ID': String(activeSession.user.workspace_id) } : DEMO_AUTH_ENABLED ? { 'X-Workspace-ID': '1' } : {}) })
+  const csrfHeaders = (method?: string): HeadersInit => {
+    if (!COOKIE_AUTH_ENABLED) return {}
+    const normalized = method?.toUpperCase()
+    const token = readCookie('relay_csrf')
+    return normalized && token && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(normalized)
+      ? { 'X-CSRF-Token': token }
+      : {}
+  }
+  const authFetch = (input: RequestInfo | URL, init: RequestInit = {}) => fetch(input, {
+    ...init,
+    credentials: API_CREDENTIALS,
+    headers: { ...authHeaders(['POST', 'PUT', 'PATCH', 'DELETE'].includes(init.method?.toUpperCase() ?? ''), session), ...csrfHeaders(init.method), ...(init.headers ?? {}) },
+  })
   const filtered = useMemo(() => tickets.filter((ticket) => `${ticket.customer} ${ticket.subject} ${ticket.preview}`.toLowerCase().includes(query.toLowerCase())), [query, tickets])
   const selectedTicket = filtered.find((ticket) => ticket.id === selectedId) ?? null
   const selectedTriage = selectedTicket && triage?.ticketId === selectedTicket.id ? triage.result : null
@@ -126,14 +146,33 @@ function App() {
     deliveryUnavailable: t.deliveryUnavailable ?? 'Delivery details not available',
     sendShortcut: t.sendShortcut ?? 'Press ⌘ + Enter to send',
   }
-  function handleSignOut() { sessionStorage.removeItem('relay-auth-session'); setSession(null) }
+  function clearLocalSession() { sessionStorage.removeItem('relay-auth-session'); setSession(null) }
+  async function handleSignOut() {
+    try { await fetch(`${API_BASE_URL}/auth/logout`, { method: 'POST', credentials: API_CREDENTIALS, headers: csrfHeaders('POST') }) } catch { /* local cleanup still logs the user out. */ }
+    clearLocalSession()
+  }
+  async function refreshSession(): Promise<AuthSession> {
+    const response = await fetch(`${API_BASE_URL}/auth/refresh`, { method: 'POST', credentials: API_CREDENTIALS, headers: csrfHeaders('POST') })
+    if (!response.ok) throw new Error('Refresh failed')
+    const next = await response.json() as AuthSession
+    sessionStorage.setItem('relay-auth-session', JSON.stringify(next))
+    setSession(next)
+    return next
+  }
   useEffect(() => {
     const token = session?.access_token
     if (!token) { setAuthChecking(false); return }
-    fetch(`${API_BASE_URL}/auth/me`, { headers: authHeaders() })
-      .then((response) => response.ok ? response.json() as Promise<AuthUser> : Promise.reject(new Error('Session expired')))
-      .then((user) => setSession((current) => current ? { ...current, user } : current))
-      .catch(() => { handleSignOut(); setAuthError(true) })
+    async function restore() {
+      let response = await fetch(`${API_BASE_URL}/auth/me`, { credentials: API_CREDENTIALS, headers: authHeaders(false, session) })
+      if (response.status === 401) {
+        const refreshed = await refreshSession()
+        response = await fetch(`${API_BASE_URL}/auth/me`, { credentials: API_CREDENTIALS, headers: authHeaders(false, refreshed) })
+      }
+      if (!response.ok) throw new Error('Session expired')
+      const user = await response.json() as AuthUser
+      setSession((current) => current ? { ...current, user } : current)
+    }
+    restore().catch(() => { clearLocalSession(); setAuthError(true) })
       .finally(() => setAuthChecking(false))
   }, [])
   useEffect(() => { document.documentElement.dataset.theme = dark ? 'dark' : 'light' }, [dark])
@@ -147,15 +186,6 @@ function App() {
   }, [settingsOpen])
   useEffect(() => { localStorage.setItem('relay-locale', locale); document.documentElement.lang = locale }, [locale])
   useEffect(() => {
-    const token = session?.access_token
-    if (!token) { setAuthChecking(false); return }
-    fetch(`${API_BASE_URL}/auth/me`, { headers: { Authorization: `Bearer ${token}` } })
-      .then((response) => response.ok ? response.json() as Promise<AuthUser> : Promise.reject(new Error('Session expired')))
-      .then((currentUser) => setSession((current) => current ? { ...current, user: currentUser } : current))
-      .catch(() => { handleSignOut(); setAuthError(true) })
-      .finally(() => setAuthChecking(false))
-  }, [])
-  useEffect(() => {
     let active = true
     const fallback = () => {
       try {
@@ -167,7 +197,7 @@ function App() {
         }
       } catch { /* localStorage is an optional demo persistence layer. */ }
     }
-    fetch(`${API_BASE_URL}/workspaces/settings`, { headers: authHeaders() })
+    fetch(`${API_BASE_URL}/workspaces/settings`, { credentials: API_CREDENTIALS, headers: authHeaders() })
       .then((response) => response.ok ? response.json() as Promise<ApiWorkspaceSettings> : Promise.reject(new Error('Workspace settings request failed')))
       .then((remote) => {
         if (!active) return
@@ -196,7 +226,7 @@ function App() {
     setSettingsSaving(true)
     setSettingsError(null)
     try {
-      const response = await fetch(`${API_BASE_URL}/workspaces/settings`, { method: 'PATCH', headers: authHeaders(true), body: JSON.stringify({ product_name: next.name, logo_url: next.logoUrl, brand_color: next.brandColor, brand_secondary_color: next.secondaryColor }) })
+      const response = await authFetch(`${API_BASE_URL}/workspaces/settings`, { method: 'PATCH', headers: authHeaders(true), body: JSON.stringify({ product_name: next.name, logo_url: next.logoUrl, brand_color: next.brandColor, brand_secondary_color: next.secondaryColor }) })
       if (!response.ok) throw new Error('Workspace settings save failed')
       const remote = await response.json() as ApiWorkspaceSettings
       const saved: WorkspaceSettings = { name: remote.product_name, logoUrl: remote.logo_url || defaultWorkspaceSettings.logoUrl, brandColor: remote.brand_color, secondaryColor: remote.brand_secondary_color }
@@ -215,8 +245,8 @@ function App() {
     const baseUrl = API_BASE_URL
     if (!session && !DEMO_AUTH_ENABLED) return
     Promise.all([
-      fetch(`${baseUrl}/tickets`, { headers: authHeaders() }).then((response) => response.ok ? response.json() as Promise<ApiTicket[]> : Promise.reject(new Error('Tickets request failed'))),
-      fetch(`${baseUrl}/customers`, { headers: authHeaders() }).then((response) => response.ok ? response.json() as Promise<ApiCustomer[]> : Promise.reject(new Error('Customers request failed'))),
+      authFetch(`${baseUrl}/tickets`).then((response) => response.ok ? response.json() as Promise<ApiTicket[]> : Promise.reject(new Error('Tickets request failed'))),
+      authFetch(`${baseUrl}/customers`).then((response) => response.ok ? response.json() as Promise<ApiCustomer[]> : Promise.reject(new Error('Customers request failed'))),
     ]).then(([apiTickets, customers]) => {
       const customerMap = new Map(customers.map((customer) => [customer.id, customer]))
       const mapped = apiTickets.map((ticket) => {
@@ -231,20 +261,20 @@ function App() {
   async function signIn(event: FormEvent) {
     event.preventDefault(); setAuthError(false)
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) })
+      const response = await fetch(`${API_BASE_URL}/auth/login`, { method: 'POST', credentials: API_CREDENTIALS, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) })
       if (!response.ok) throw new Error('Login failed')
       const next = await response.json() as AuthSession
       sessionStorage.setItem('relay-auth-session', JSON.stringify(next)); setSession(next)
     } catch { setAuthError(true) }
   }
-  function signOut() { handleSignOut(); setTickets(demoTickets); setSettingsOpen(false) }
+  function signOut() { void handleSignOut(); setTickets(demoTickets); setSettingsOpen(false) }
 
   async function runTriage() {
     if (!selectedTicket || triageLoading || !canOperate) return
     setTriageLoading(true)
     setTriageError(null)
     try {
-      const response = await fetch(`${API_BASE_URL}/tickets/${selectedTicket.id}/triage`, { method: 'POST', headers: authHeaders() })
+      const response = await authFetch(`${API_BASE_URL}/tickets/${selectedTicket.id}/triage`, { method: 'POST' })
       if (!response.ok) throw new Error('Triage request failed')
       setTriage({ ticketId: selectedTicket.id, result: await response.json() as TriageResult })
     } catch {
@@ -261,7 +291,7 @@ function App() {
     const localStatus: Ticket['status'] = nextStatus === 'resolved' ? 'resolved' : 'pending'
     const updateLocal = () => setTickets((current) => current.map((ticket) => ticket.id === selectedTicket.id ? { ...ticket, status: localStatus } : ticket))
     try {
-      const response = await fetch(`${API_BASE_URL}/tickets/${selectedTicket.id}/status`, { method: 'PATCH', headers: authHeaders(true), body: JSON.stringify({ status: nextStatus }) })
+      const response = await authFetch(`${API_BASE_URL}/tickets/${selectedTicket.id}/status`, { method: 'PATCH', headers: authHeaders(true), body: JSON.stringify({ status: nextStatus }) })
       if (!response.ok) throw new Error('Status update failed')
       updateLocal()
     } catch {
