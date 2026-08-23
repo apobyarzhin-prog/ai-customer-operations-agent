@@ -585,3 +585,7 @@ Added FastAPI authentication with PBKDF2 password hashes, short-lived JWT bearer
 ## 2026-08-22 — Inbox UX audit pass
 
 Audited the frontend workflow in code: Inbox → ticket → AI triage → Settings. Fixed the TypeScript fallback typing, made the language control explicit for EN/PL/DE/ES/RU, improved empty-state semantics, added Escape/scroll handling for Settings, and strengthened mobile overlay/focus styling. Backend and locale dictionaries were left unchanged; frontend build and diff checks pass in commit `10434e8`.
+
+## 2026-08-23 — Frontend authentication UI
+
+Added a branded login screen with session-scoped JWT storage, `/auth/login` and `/auth/me` integration, loading/error states, demo-credential guidance, role-aware workspace profile, and sign-out. Backend was not changed; the demo account remains controlled by backend configuration.

@@ -122,3 +122,14 @@
 - [x] Run Ruff, Alembic head check, diff check, and push `8c27dbf`
 - [ ] Connect frontend login/session UI
 - [ ] Add production user invitation and password reset flows
+
+## CP-014 — Frontend authentication UI
+
+- [x] Add Relay-branded accessible login screen
+- [x] Connect `POST /auth/login` and `GET /auth/me`
+- [x] Store JWT session in `sessionStorage` only
+- [x] Add loading, error, demo guidance, and sign-out states
+- [x] Apply bearer auth to workspace, ticket, triage, and status requests
+- [x] Keep backend unchanged
+- [x] Run `npm run build` and `git diff --check`
+- [ ] Run browser screenshot QA with both valid and invalid login
