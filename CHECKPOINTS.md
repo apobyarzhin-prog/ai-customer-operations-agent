@@ -169,3 +169,12 @@
 - [x] Keep auth implementation and frontend UI outside the deployment commit
 - [ ] Choose hosting providers, configure HTTPS/DNS/secrets, and deploy
 - [ ] Resolve the pre-existing auth test failure before production release
+
+## CP-017 — Scrollbar/layout refinement and LLM provider integration
+
+- [x] Record scrollbar/layout stability fix (`6db1eb0`)
+- [ ] Select the real LLM provider and configure secrets
+- [ ] Define and test the structured triage response contract
+- [ ] Add timeout, retry, cost/usage logging, and failure handling
+- [ ] Add safety boundaries and evaluation cases before enabling the real provider
+- [ ] Keep the deterministic demo provider as the fallback until verification is complete
