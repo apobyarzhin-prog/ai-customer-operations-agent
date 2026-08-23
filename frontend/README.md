@@ -20,6 +20,9 @@ Copy `.env.example` to `.env` and set:
 VITE_API_BASE_URL=http://127.0.0.1:8000
 ```
 
+For a deployed frontend, use `.env.production.example` and set
+`VITE_API_BASE_URL` to the public HTTPS API URL before `npm run build`.
+
 The current first slice keeps the demo dataset as the rendering fallback; API integration is intentionally isolated for the next frontend iteration.
 
 ## Verify

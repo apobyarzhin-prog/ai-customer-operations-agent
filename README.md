@@ -95,3 +95,17 @@ returns `404` when the ticket is outside the active workspace.
 White-label settings are workspace-scoped and available through `GET/PATCH /workspaces/settings`.
 Use `X-Workspace-ID` to select a workspace. Demo workspace `1` defaults to Relay Operations,
 `#D97706`, `#0F766E`, English, UTC, and `/relay-mark.svg`.
+
+## Deployment preparation
+
+Deployment is intentionally not performed from this repository. Use
+`.env.production.example` for backend settings and
+`frontend/.env.production.example` for the public API URL. The complete hosting
+guide, start commands, SQLite-to-PostgreSQL notes, CORS guidance, and smoke test
+are in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+
+Run the local smoke check with both services running:
+
+```powershell
+./scripts/deployment_smoke.ps1 -FrontendUrl "http://127.0.0.1:5173"
+```
