@@ -133,3 +133,15 @@
 - [x] Keep backend unchanged
 - [x] Run `npm run build` and `git diff --check`
 - [ ] Run browser screenshot QA with both valid and invalid login
+
+## CP-015 — Login visual redesign
+
+- [x] Replace generic centered auth card with responsive split composition
+- [x] Apply Relay logo, brand color, product hierarchy, and calm operations messaging
+- [x] Add localized intro copy for EN/PL/DE/ES/RU
+- [x] Add accessible language and theme controls to login
+- [x] Fix dark-theme native select text and option contrast
+- [x] Improve focus, error, loading, and mobile states
+- [x] Preserve existing auth/session behavior and backend boundaries
+- [x] Run `npm run build`, `git diff --check`, and browser visual checks
+- [x] Commit and push `4dcd27c`

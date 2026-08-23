@@ -589,3 +589,7 @@ Audited the frontend workflow in code: Inbox → ticket → AI triage → Settin
 ## 2026-08-23 — Frontend authentication UI
 
 Added a branded login screen with session-scoped JWT storage, `/auth/login` and `/auth/me` integration, loading/error states, demo-credential guidance, role-aware workspace profile, and sign-out. Backend was not changed; the demo account remains controlled by backend configuration.
+
+## 2026-08-23 — Login experience redesign
+
+Reworked the auth surface into a responsive split layout with a stronger Relay lockup, calmer product messaging, clearer form hierarchy, localized intro copy, and dedicated language/theme controls. Added native dark-theme select styling, readable options, stronger input focus/error/loading states, and mobile stacking. Backend and auth behavior were unchanged; build and browser checks passed in commit `4dcd27c`.
