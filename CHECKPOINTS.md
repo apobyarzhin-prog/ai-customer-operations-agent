@@ -145,3 +145,15 @@
 - [x] Preserve existing auth/session behavior and backend boundaries
 - [x] Run `npm run build`, `git diff --check`, and browser visual checks
 - [x] Commit and push `4dcd27c`
+
+## CP-016 — Deployment preparation
+
+- [x] Add production backend and frontend env examples without secrets
+- [x] Document FastAPI and static frontend start commands
+- [x] Document PostgreSQL/SQLite configuration and migration flow
+- [x] Document exact CORS guidance and production auth defaults
+- [x] Add API/frontend smoke test script
+- [x] Run local smoke test: API `200`, frontend `200`
+- [x] Keep auth implementation and frontend UI outside the deployment commit
+- [ ] Choose hosting providers, configure HTTPS/DNS/secrets, and deploy
+- [ ] Resolve the pre-existing auth test failure before production release

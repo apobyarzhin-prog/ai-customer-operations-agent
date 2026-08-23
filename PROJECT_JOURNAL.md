@@ -593,3 +593,7 @@ Added a branded login screen with session-scoped JWT storage, `/auth/login` and 
 ## 2026-08-23 — Login experience redesign
 
 Reworked the auth surface into a responsive split layout with a stronger Relay lockup, calmer product messaging, clearer form hierarchy, localized intro copy, and dedicated language/theme controls. Added native dark-theme select styling, readable options, stronger input focus/error/loading states, and mobile stacking. Backend and auth behavior were unchanged; build and browser checks passed in commit `4dcd27c`.
+
+## 2026-08-23 — Deployment preparation
+
+Added non-deploying production preparation: backend/frontend env examples, PostgreSQL driver/config notes, FastAPI and static frontend start commands, exact CORS guidance, health-check documentation, and `scripts/deployment_smoke.ps1`. Local smoke check passed for API and frontend; deployment remains intentionally manual. Auth/UI implementation files were excluded from commit `63221de`.
