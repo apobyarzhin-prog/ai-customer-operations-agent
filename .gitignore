@@ -17,6 +17,7 @@ build/
 .vscode/
 *.log
 *.db
+*.db-journal
 node_modules/
 frontend/dist/
 .audit-*/
