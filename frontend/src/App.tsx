@@ -272,7 +272,7 @@ function App() {
   if (authChecking) return <AuthScreen copy={t} loading />
   if (!session) return <AuthScreen copy={t} email={email} password={password} error={authError} onEmail={setEmail} onPassword={setPassword} onSubmit={(event) => void signIn(event)} />
 
-  return <div className="app-shell" style={{ '--workspace-name': `"${workspaceSettings.name}"` } as CSSProperties}>
+  return <div className="app-shell" data-readonly={!canOperate} style={{ '--workspace-name': `"${workspaceSettings.name}"` } as CSSProperties}>
     <aside className="sidebar">
       <div className="brand"><BrandLogo src={workspaceSettings.logoUrl} name={workspaceSettings.name} /><span>{workspaceSettings.name.split(' ')[0]} <em>{workspaceSettings.name.split(' ').slice(1).join(' ')}</em></span></div>
       <nav className="primary-nav"><NavItem icon={<Inbox />} label={t.inbox} active count="12" /><NavItem icon={<UserRound />} label={t.customers} /><NavItem icon={<CircleHelp />} label={t.knowledge} /><NavItem icon={<LayoutDashboard />} label={t.reports} /></nav>
