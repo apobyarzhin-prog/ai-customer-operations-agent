@@ -598,6 +598,8 @@ Reworked the auth surface into a responsive split layout with a stronger Relay l
 
 Added revocable refresh sessions, token rotation, logout revocation, and HttpOnly access/refresh cookies while preserving the existing Bearer response for local compatibility. Added a bounded login rate limiter, production config guards for demo auth, secret length, and secure cookies, plus regression tests for cookies, refresh, logout, rate limiting, and configuration. Migration `20260823_0005` adds the session table; the in-process limiter remains documented as a single-process baseline until Redis or an edge gateway is used.
 
+Cookie-only state-changing requests also require the readable CSRF token; Bearer-authenticated requests remain compatible with the current frontend.
+
 ## 2026-08-23 — Deployment preparation
 
 Added non-deploying production preparation: backend/frontend env examples, PostgreSQL driver/config notes, FastAPI and static frontend start commands, exact CORS guidance, health-check documentation, and `scripts/deployment_smoke.ps1`. Local smoke check passed for API and frontend; deployment remains intentionally manual. Auth/UI implementation files were excluded from commit `63221de`.

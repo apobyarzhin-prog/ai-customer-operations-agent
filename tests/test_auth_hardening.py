@@ -59,6 +59,15 @@ def test_refresh_rotates_cookie_and_logout_revokes_session() -> None:
         assert client.post("/auth/refresh").status_code == 401
 
 
+def test_cookie_only_mutations_require_csrf_token() -> None:
+    email, password = make_user()
+    with TestClient(app) as client:
+        assert client.post("/auth/login", json={"email": email, "password": password}).status_code == 200
+        response = client.post("/customers", json={"email": "csrf@example.com", "full_name": "CSRF"})
+        assert response.status_code == 403
+        assert response.json()["detail"] == "CSRF token required"
+
+
 def test_login_rate_limit_returns_retry_after() -> None:
     email, _ = make_user()
     with TestClient(app) as client:

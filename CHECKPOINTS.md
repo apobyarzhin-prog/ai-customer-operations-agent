@@ -154,9 +154,9 @@
 - [x] Add bounded login rate limiting with `Retry-After`
 - [x] Reject unsafe production/demo configuration and weak secrets
 - [x] Add cookie, refresh, logout, limiter, and config-guard tests
+- [x] Require the readable CSRF token for cookie-only state-changing requests
 - [x] Run pytest, Ruff, Alembic, and diff checks
 - [ ] Replace in-process limiter with shared Redis/gateway limiter before multi-worker production
-- [ ] Add CSRF enforcement when the frontend switches fully to cookie-auth mutations
 
 ## CP-016 — Deployment preparation
 
