@@ -1,8 +1,13 @@
 from __future__ import annotations
 
+import json
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from dataclasses import dataclass
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 
+from app.core.config import Settings, get_settings
 from app.models.ticket import Ticket
 from app.schemas.triage import TicketTriageRead, TriagePriority, TriageStatus
 
@@ -108,8 +113,94 @@ class DemoTicketTriageProvider(TicketTriageProvider):
         )
 
 
+class OpenAICompatibleTicketTriageProvider(TicketTriageProvider):
+    """Ticket triage through an OpenAI-compatible ``/chat/completions`` API."""
+
+    def __init__(
+        self,
+        settings: Settings | None = None,
+        *,
+        opener: Callable[..., object] = urlopen,
+        fallback: TicketTriageProvider | None = None,
+    ) -> None:
+        self.settings = settings or get_settings()
+        self.opener = opener
+        self.fallback = fallback or DemoTicketTriageProvider()
+
+    def triage(self, ticket: Ticket) -> TriageResult:
+        if not self.settings.openai_api_key:
+            return self._fallback(ticket, "No LLM API key is configured.")
+
+        payload = {
+            "model": self.settings.openai_model,
+            "temperature": 0,
+            "response_format": {"type": "json_object"},
+            "messages": [
+                {
+                    "role": "system",
+                    "content": (
+                        "You triage customer-support tickets. Return only JSON with exactly these keys: "
+                        "priority (low|normal|high|urgent), recommended_status "
+                        "(open|in_progress|resolved), summary, suggested_reply, confidence (0..1), "
+                        "reasoning (array of short strings). Do not invent customer data."
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": json.dumps(
+                        {
+                            "subject": ticket.subject,
+                            "description": ticket.description,
+                            "current_status": ticket.status,
+                        },
+                        ensure_ascii=False,
+                    ),
+                },
+            ],
+        }
+        request = Request(
+            f"{self.settings.openai_base_url.rstrip('/')}/chat/completions",
+            data=json.dumps(payload).encode("utf-8"),
+            headers={
+                "Authorization": f"Bearer {self.settings.openai_api_key}",
+                "Content-Type": "application/json",
+            },
+            method="POST",
+        )
+        try:
+            with self.opener(request, timeout=self.settings.openai_timeout_seconds) as response:
+                body = json.loads(response.read().decode("utf-8"))
+            content = body["choices"][0]["message"]["content"]
+            result = json.loads(content) if isinstance(content, str) else content
+            return TriageResult(
+                priority=result["priority"],
+                recommended_status=result["recommended_status"],
+                summary=result["summary"],
+                suggested_reply=result["suggested_reply"],
+                confidence=float(result["confidence"]),
+                reasoning=[str(item) for item in result["reasoning"]],
+            )
+        except (HTTPError, URLError, TimeoutError, KeyError, IndexError, TypeError, ValueError, json.JSONDecodeError) as exc:
+            if not self.settings.triage_llm_fallback_to_demo:
+                raise RuntimeError("Configured LLM triage provider failed") from exc
+            return self._fallback(ticket, f"LLM provider unavailable; demo triage used ({type(exc).__name__}).")
+
+    def _fallback(self, ticket: Ticket, reason: str) -> TriageResult:
+        result = self.fallback.triage(ticket)
+        return TriageResult(
+            priority=result.priority,
+            recommended_status=result.recommended_status,
+            summary=result.summary,
+            suggested_reply=result.suggested_reply,
+            confidence=result.confidence,
+            reasoning=[reason, *result.reasoning],
+        )
+
+
 def get_ticket_triage_provider() -> TicketTriageProvider:
-    """Return the local provider used until an external provider is configured."""
+    """Select the configured provider; demo remains the safe local default."""
 
+    settings = get_settings()
+    if settings.triage_provider == "openai":
+        return OpenAICompatibleTicketTriageProvider(settings)
     return DemoTicketTriageProvider()
-

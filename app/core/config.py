@@ -23,6 +23,12 @@ class Settings(BaseSettings):
     demo_auth_enabled: bool = True
     demo_user_email: str = "demo@relay.example"
     demo_user_password: str = "demo-password"
+    triage_provider: str = "demo"
+    openai_base_url: str = "https://api.openai.com/v1"
+    openai_api_key: str = ""
+    openai_model: str = "gpt-4o-mini"
+    openai_timeout_seconds: float = 20.0
+    triage_llm_fallback_to_demo: bool = True
 
     @property
     def cors_origin_list(self) -> list[str]:
@@ -46,6 +52,10 @@ class Settings(BaseSettings):
             raise ValueError("AUTH_SECRET must be at least 32 characters when demo auth is disabled")
         if self.auth_cookie_samesite not in {"lax", "strict", "none"}:
             raise ValueError("AUTH_COOKIE_SAMESITE must be lax, strict, or none")
+        if self.triage_provider not in {"demo", "openai"}:
+            raise ValueError("TRIAGE_PROVIDER must be demo or openai")
+        if self.openai_timeout_seconds <= 0:
+            raise ValueError("OPENAI_TIMEOUT_SECONDS must be greater than zero")
 
 
 @lru_cache
