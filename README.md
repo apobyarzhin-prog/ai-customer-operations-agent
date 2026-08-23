@@ -53,7 +53,7 @@ Then open the interactive API at http://127.0.0.1:8000/docs.
 
 Production requests must use a Bearer token from `POST /auth/login`; the token carries the user, role, and workspace scope. `X-Workspace-ID` is never trusted for authenticated requests and, when present, must match the token workspace.
 
-The local demo has an explicit compatibility mode enabled by default (`DEMO_AUTH_ENABLED=true`). It creates `demo@relay.local` with password `demo-password` in workspace `1` and permits unauthenticated local-style requests, including the legacy header. Disable it in any deployed environment:
+The local demo has an explicit compatibility mode enabled by default (`DEMO_AUTH_ENABLED=true`). It creates `demo@relay.example` with password `demo-password` in workspace `1` and permits unauthenticated local-style requests, including the legacy header. Disable it in any deployed environment:
 
 ```powershell
 $env:DEMO_AUTH_ENABLED="false"
@@ -63,7 +63,7 @@ $env:AUTH_SECRET="replace-with-a-long-random-secret"
 Login and call a scoped endpoint:
 
 ```powershell
-$token = (curl http://127.0.0.1:8000/auth/login -Method Post -ContentType "application/json" -Body '{"email":"demo@relay.local","password":"demo-password"}' | ConvertFrom-Json).access_token
+$token = (curl http://127.0.0.1:8000/auth/login -Method Post -ContentType "application/json" -Body '{"email":"demo@relay.example","password":"demo-password"}' | ConvertFrom-Json).access_token
 curl http://127.0.0.1:8000/customers -Headers @{ Authorization = "Bearer $token" }
 ```
 

@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     auth_secret: str = "change-this-local-secret-please-use-32-bytes"
     auth_token_expire_minutes: int = 60
     demo_auth_enabled: bool = True
-    demo_user_email: str = "demo@relay.local"
+    demo_user_email: str = "demo@relay.example"
     demo_user_password: str = "demo-password"
 
     @property
