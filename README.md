@@ -51,14 +51,21 @@ Then open the interactive API at http://127.0.0.1:8000/docs.
 
 ## Authentication and workspace isolation
 
-Production requests must use a Bearer token from `POST /auth/login`; the token carries the user, role, and workspace scope. `X-Workspace-ID` is never trusted for authenticated requests and, when present, must match the token workspace.
+Production requests use a short-lived access token plus a rotating, revocable refresh session. `POST /auth/login` sets `HttpOnly` access and refresh cookies and also returns the access token for legacy Bearer clients. `POST /auth/refresh` rotates the refresh cookie; `POST /auth/logout` revokes it. `X-Workspace-ID` is never trusted for authenticated requests and, when present, must match the token workspace.
 
 The local demo has an explicit compatibility mode enabled by default (`DEMO_AUTH_ENABLED=true`). It creates `demo@relay.example` with password `demo-password` in workspace `1` and permits unauthenticated local-style requests, including the legacy header. Disable it in any deployed environment:
 
 ```powershell
 $env:DEMO_AUTH_ENABLED="false"
 $env:AUTH_SECRET="replace-with-a-long-random-secret"
+$env:ENVIRONMENT="production"
+$env:AUTH_COOKIE_SECURE="true"
 ```
+
+Outside demo mode `AUTH_SECRET` must be at least 32 characters. Production refuses to start
+with demo auth enabled or insecure auth cookies. The login endpoint has a bounded in-process
+rate limiter (5 attempts per minute per IP/email); multi-worker production must replace it
+with a shared Redis or gateway limiter.
 
 Login and call a scoped endpoint:
 
@@ -66,6 +73,9 @@ Login and call a scoped endpoint:
 $token = (curl http://127.0.0.1:8000/auth/login -Method Post -ContentType "application/json" -Body '{"email":"demo@relay.example","password":"demo-password"}' | ConvertFrom-Json).access_token
 curl http://127.0.0.1:8000/customers -Headers @{ Authorization = "Bearer $token" }
 ```
+
+Cookie clients should call `/auth/refresh` before access expiry and `/auth/logout` when signing
+out. Cookies use `SameSite=Lax` by default and become `Secure` when `AUTH_COOKIE_SECURE=true`.
 
 Roles are `owner`, `admin`, `agent`, and `viewer`. Viewers can read workspace data; owner/admin can change workspace branding; owner/admin/agent can create records and update statuses.
 

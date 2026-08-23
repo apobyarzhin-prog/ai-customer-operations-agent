@@ -20,3 +20,12 @@ class TokenRead(BaseModel):
     token_type: str = "bearer"
     expires_in: int
     user: UserRead
+
+
+class SessionRead(BaseModel):
+    """Refresh response; access token remains in JSON for legacy Bearer clients."""
+
+    access_token: str
+    token_type: str = "bearer"
+    expires_in: int
+    user: UserRead

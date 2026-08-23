@@ -375,6 +375,7 @@ def test_authenticated_workspace_header_cannot_select_another_workspace() -> Non
 def test_missing_bearer_is_rejected_when_demo_auth_is_disabled(monkeypatch) -> None:
     from app.core.config import get_settings
 
+    client.cookies.clear()
     monkeypatch.setattr(get_settings(), "demo_auth_enabled", False)
     try:
         assert client.get("/customers").status_code == 401

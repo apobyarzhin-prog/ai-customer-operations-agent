@@ -146,6 +146,18 @@
 - [x] Run `npm run build`, `git diff --check`, and browser visual checks
 - [x] Commit and push `4dcd27c`
 
+## CP-016 — Backend production authentication hardening
+
+- [x] Add persisted, hashed refresh sessions with rotation and revoke-on-logout
+- [x] Set HttpOnly access/refresh cookies with configurable Secure and SameSite flags
+- [x] Preserve Bearer JSON compatibility for the existing local frontend/demo
+- [x] Add bounded login rate limiting with `Retry-After`
+- [x] Reject unsafe production/demo configuration and weak secrets
+- [x] Add cookie, refresh, logout, limiter, and config-guard tests
+- [x] Run pytest, Ruff, Alembic, and diff checks
+- [ ] Replace in-process limiter with shared Redis/gateway limiter before multi-worker production
+- [ ] Add CSRF enforcement when the frontend switches fully to cookie-auth mutations
+
 ## CP-016 — Deployment preparation
 
 - [x] Add production backend and frontend env examples without secrets

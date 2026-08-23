@@ -1,15 +1,17 @@
 from __future__ import annotations
 
+import hashlib
+import secrets
 from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
 import jwt
-from fastapi import Depends, Header, HTTPException, status
+from fastapi import Cookie, Depends, Header, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.db.session import get_db
-from app.models import User
+from app.models import AuthSession, User
 
 ROLES = {"owner", "admin", "agent", "viewer"}
 
@@ -46,20 +48,67 @@ def create_access_token(user: User) -> tuple[str, int]:
     return jwt.encode(payload, settings.auth_secret, algorithm="HS256"), int(expires.total_seconds())
 
 
+def create_refresh_session(user: User, db: Session) -> tuple[str, int]:
+    """Create an opaque refresh token; only its SHA-256 hash is persisted."""
+    settings = get_settings()
+    raw_token = secrets.token_urlsafe(48)
+    expires = timedelta(days=settings.auth_refresh_token_expire_days)
+    db.add(AuthSession(
+        user_id=user.id,
+        token_hash=hashlib.sha256(raw_token.encode()).hexdigest(),
+        expires_at=datetime.now(UTC).replace(tzinfo=None) + expires,
+    ))
+    db.commit()
+    return raw_token, int(expires.total_seconds())
+
+
+def _refresh_hash(token: str) -> str:
+    return hashlib.sha256(token.encode()).hexdigest()
+
+
+def revoke_refresh_session(token: str | None, db: Session) -> None:
+    if not token:
+        return
+    session = db.query(AuthSession).filter(AuthSession.token_hash == _refresh_hash(token)).first()
+    if session and session.revoked_at is None:
+        session.revoked_at = datetime.now(UTC).replace(tzinfo=None)
+        db.commit()
+
+
+def rotate_refresh_session(token: str, db: Session) -> tuple[User, str, int]:
+    """Atomically consume a refresh token and issue a replacement."""
+    session = db.query(AuthSession).filter(AuthSession.token_hash == _refresh_hash(token)).first()
+    now = datetime.now(UTC).replace(tzinfo=None)
+    if session is None or session.revoked_at is not None or session.expires_at <= now:
+        raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
+    user = db.get(User, session.user_id)
+    if user is None or not user.is_active:
+        raise HTTPException(status_code=401, detail="User is inactive or not found")
+    session.revoked_at = now
+    db.commit()
+    new_token, expires_in = create_refresh_session(user, db)
+    return user, new_token, expires_in
+
+
 def get_current_user(
     authorization: Annotated[str | None, Header()] = None,
+    access_cookie: Annotated[str | None, Cookie(alias="relay_access")] = None,
     db: Session = Depends(get_db),
 ) -> User:
     settings = get_settings()
-    if not authorization:
+    token = None
+    if authorization:
+        scheme, _, token = authorization.partition(" ")
+        if scheme.lower() != "bearer" or not token:
+            raise HTTPException(status_code=401, detail="Bearer token required")
+    elif access_cookie:
+        token = access_cookie
+    else:
         if settings.demo_auth_enabled:
             demo = db.query(User).filter(User.email == settings.demo_user_email).first()
             if demo:
                 return demo
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Bearer token required")
-    scheme, _, token = authorization.partition(" ")
-    if scheme.lower() != "bearer" or not token:
-        raise HTTPException(status_code=401, detail="Bearer token required")
     try:
         payload = jwt.decode(token, settings.auth_secret, algorithms=["HS256"])
         user_id = int(payload["sub"])

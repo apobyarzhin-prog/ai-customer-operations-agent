@@ -594,6 +594,10 @@ Added a branded login screen with session-scoped JWT storage, `/auth/login` and 
 
 Reworked the auth surface into a responsive split layout with a stronger Relay lockup, calmer product messaging, clearer form hierarchy, localized intro copy, and dedicated language/theme controls. Added native dark-theme select styling, readable options, stronger input focus/error/loading states, and mobile stacking. Backend and auth behavior were unchanged; build and browser checks passed in commit `4dcd27c`.
 
+## 2026-08-23 — Backend production auth hardening
+
+Added revocable refresh sessions, token rotation, logout revocation, and HttpOnly access/refresh cookies while preserving the existing Bearer response for local compatibility. Added a bounded login rate limiter, production config guards for demo auth, secret length, and secure cookies, plus regression tests for cookies, refresh, logout, rate limiting, and configuration. Migration `20260823_0005` adds the session table; the in-process limiter remains documented as a single-process baseline until Redis or an edge gateway is used.
+
 ## 2026-08-23 — Deployment preparation
 
 Added non-deploying production preparation: backend/frontend env examples, PostgreSQL driver/config notes, FastAPI and static frontend start commands, exact CORS guidance, health-check documentation, and `scripts/deployment_smoke.ps1`. Local smoke check passed for API and frontend; deployment remains intentionally manual. Auth/UI implementation files were excluded from commit `63221de`.

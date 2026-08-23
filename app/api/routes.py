@@ -1,12 +1,17 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+import secrets
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.auth import (
     create_access_token,
+    create_refresh_session,
     get_current_user,
     require_roles,
     resolve_workspace_id,
+    revoke_refresh_session,
+    rotate_refresh_session,
     verify_password,
 )
 from app.core.config import get_settings
@@ -18,6 +23,7 @@ from app.schemas.order import OrderCreate, OrderRead, OrderStatusUpdate
 from app.schemas.ticket import TicketCreate, TicketRead, TicketStatusUpdate
 from app.schemas.triage import TicketTriageRead
 from app.schemas.workspace import WorkspaceRead, WorkspaceSettingsRead, WorkspaceSettingsUpdate
+from app.services.rate_limit import enforce_login_rate_limit
 from app.services.triage import get_ticket_triage_provider
 
 router = APIRouter()
@@ -41,14 +47,62 @@ def health_check() -> dict[str, str]:
     return {"status": "ok", "service": get_settings().app_name}
 
 
+def _set_auth_cookies(response: Response, access_token: str, refresh_token: str) -> None:
+    settings = get_settings()
+    common = {
+        "secure": settings.auth_cookie_secure,
+        "httponly": True,
+        "samesite": settings.auth_cookie_samesite,
+        "path": "/",
+    }
+    response.set_cookie(settings.auth_access_cookie, access_token,
+                        max_age=settings.auth_token_expire_minutes * 60, **common)
+    response.set_cookie(settings.auth_refresh_cookie, refresh_token,
+                        max_age=settings.auth_refresh_token_expire_days * 86400, **common)
+    # A non-secret token is available for a future CSRF-aware cookie client.
+    response.set_cookie(settings.auth_csrf_cookie, secrets.token_urlsafe(24),
+                        secure=settings.auth_cookie_secure, httponly=False,
+                        samesite=settings.auth_cookie_samesite, path="/")
+
+
+def _clear_auth_cookies(response: Response) -> None:
+    settings = get_settings()
+    for name in (settings.auth_access_cookie, settings.auth_refresh_cookie, settings.auth_csrf_cookie):
+        response.delete_cookie(name, path="/")
+
+
 @router.post("/auth/login", response_model=TokenRead, tags=["auth"])
-def login(payload: LoginRequest, db: Session = Depends(get_db)) -> TokenRead:
-    """Exchange credentials for a short-lived workspace-scoped bearer token."""
+def login(payload: LoginRequest, request: Request, response: Response, db: Session = Depends(get_db)) -> TokenRead:
+    """Issue a Bearer-compatible response and httpOnly access/refresh cookies."""
+    enforce_login_rate_limit(request, str(payload.email))
     user = db.query(User).filter(User.email == str(payload.email).lower()).first()
     if user is None or not user.is_active or not verify_password(payload.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid email or password")
     token, expires_in = create_access_token(user)
+    refresh_token, _ = create_refresh_session(user, db)
+    _set_auth_cookies(response, token, refresh_token)
     return TokenRead(access_token=token, expires_in=expires_in, user=UserRead.model_validate(user))
+
+
+@router.post("/auth/refresh", response_model=TokenRead, tags=["auth"])
+def refresh_session(request: Request, response: Response, db: Session = Depends(get_db)) -> TokenRead:
+    """Rotate a refresh cookie and issue a new access cookie."""
+    refresh_token = request.cookies.get(get_settings().auth_refresh_cookie)
+    if not refresh_token:
+        raise HTTPException(status_code=401, detail="Refresh token required")
+    user, new_refresh, _ = rotate_refresh_session(refresh_token, db)
+    access_token, expires_in = create_access_token(user)
+    _set_auth_cookies(response, access_token, new_refresh)
+    return TokenRead(access_token=access_token, expires_in=expires_in, user=UserRead.model_validate(user))
+
+
+@router.post("/auth/logout", status_code=status.HTTP_204_NO_CONTENT, tags=["auth"])
+def logout(request: Request, response: Response, db: Session = Depends(get_db)) -> Response:
+    """Revoke the refresh session and clear all auth cookies."""
+    revoke_refresh_session(request.cookies.get(get_settings().auth_refresh_cookie), db)
+    _clear_auth_cookies(response)
+    response.status_code = status.HTTP_204_NO_CONTENT
+    return response
 
 
 @router.get("/auth/me", response_model=UserRead, tags=["auth"])
